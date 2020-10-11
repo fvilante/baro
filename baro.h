@@ -1,0 +1,456 @@
+#ifndef BARO_3FDC036FA2C64C72A0DB6BA1033C678B
+#define BARO_3FDC036FA2C64C72A0DB6BA1033C678B
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <setjmp.h>
+
+struct baro__tag {
+  const char *desc;
+  const char *file_name;
+  int line_num;
+};
+
+struct baro__tag_list {
+  struct baro__tag ** tags;
+  int size;
+  int capacity;
+};
+
+static inline void baro__tag_list_create(struct baro__tag_list *list, int capacity) {
+  list->tags = calloc(capacity, sizeof(struct baro__tag *));
+  list->size = 0;
+  list->capacity = capacity;
+}
+
+static inline void baro__tag_list_destroy(struct baro__tag_list *list) {
+  if (list->tags) {
+    free(list->tags);
+  }
+}
+
+static inline void baro__tag_list_clear(struct baro__tag_list *list) {
+  list->size = 0;
+}
+
+static inline void baro__tag_list_push(struct baro__tag_list *list, struct baro__tag * tag) {
+  if (list->size == list->capacity) {
+    list->capacity *= 2;
+
+    struct baro__tag **old_tags = list->tags;
+
+    list->tags = calloc(list->capacity, sizeof(struct baro__tag *));
+    for (size_t i = 0; i < list->size; i++) {
+      list->tags[i] = old_tags[i];
+    }
+
+    free(old_tags);
+  }
+
+  list->tags[list->size++] = tag;
+}
+
+static inline struct baro__tag *baro__tag_list_pop(struct baro__tag_list *list) {
+  if (list->size > 0) {
+    return list->tags[--list->size];
+  }
+  abort();
+}
+
+static inline uint64_t baro__tag_list_hash(struct baro__tag_list *list) {
+  uint64_t hash = 0;
+
+  for (int i = 0; i < list->size; i++) {
+    uintptr_t a = (uintptr_t)list->tags[i];
+    a = (a+0x7ed55d16u) + (a<<12u);
+    a = (a^0xc761c23cu) ^ (a>>19u);
+    a = (a+0x165667b1u) + (a<<5u);
+    a = (a+0xd3a2646cu) ^ (a<<9u);
+    a = (a+0xfd7046c5u) + (a<<3u);
+    a = (a^0xb55a4f09u) ^ (a>>16u);
+    hash ^= a;
+  }
+
+  return hash;
+}
+
+struct baro__hash_set {
+  size_t nbits;
+  uint64_t mask;
+
+  size_t capacity;
+  size_t size;
+
+  uint64_t *hashes;
+};
+
+static inline void baro__hash_set_create(struct baro__hash_set *set) {
+  set->nbits = 4;
+  set->capacity = 1u << set->nbits;
+  set->mask = set->capacity - 1;
+
+  set->hashes = calloc(set->capacity, sizeof(uint64_t));
+  set->size = 0;
+}
+
+static inline void baro__hash_set_clear(struct baro__hash_set *set) {
+  set->size = 0;
+  memset(set->hashes, 0, set->capacity * sizeof(uint64_t));
+}
+
+#define BARO__HASH_SET_PRIME_1 73
+#define BARO__HASH_SET_PRIME_2 5009
+
+static inline void baro__hash_set_add(struct baro__hash_set *set, uint64_t hash) {
+  uint64_t index = set->mask & (BARO__HASH_SET_PRIME_1 * hash);
+
+  while (set->hashes[index]) {
+    if (set->hashes[index] == hash) {
+      return;
+    }
+
+    index = set->mask & (index + BARO__HASH_SET_PRIME_2);
+  }
+
+  set->size++;
+  set->hashes[index] = hash;
+
+  if (set->size > (double) set->capacity * 0.85) {
+    uint64_t *prev_hashes = set->hashes;
+    size_t prev_capacity = set->capacity;
+
+    set->nbits++;
+    set->capacity = 1u << set->nbits;
+    set->mask = set->capacity - 1;
+
+    set->hashes = calloc(set->capacity, sizeof(uint64_t));
+    set->size = 0;
+    for (size_t i = 0; i < prev_capacity; i++) {
+      if (prev_hashes[i] == 0) {
+        continue;
+      }
+
+      baro__hash_set_add(set, prev_hashes[i]);
+    }
+    free(prev_hashes);
+  }
+}
+
+static inline int baro__hash_set_contains(struct baro__hash_set *set, uint64_t hash) {
+  size_t index = set->mask & (BARO__HASH_SET_PRIME_1 * hash);
+
+  while (set->hashes[index]) {
+    if (set->hashes[index] == hash) {
+      return 1;
+    }
+
+    index = set->mask & (index + BARO__HASH_SET_PRIME_2);
+  }
+
+  return 0;
+}
+
+struct baro__test {
+  struct baro__tag *tag;
+  void (*func)(void);
+};
+
+struct baro__test_list {
+  struct baro__test *tests;
+  size_t size;
+  size_t capacity;
+};
+
+static inline void baro__test_list_create(struct baro__test_list *list, size_t capacity) {
+  list->tests = calloc(capacity, sizeof(struct baro__test));
+  list->size = 0;
+  list->capacity = capacity;
+}
+
+static inline void baro__test_list_add(struct baro__test_list *list, struct baro__test *test) {
+  if (list->size == list->capacity) {
+    list->capacity *= 2;
+
+    struct baro__test *old_tests = list->tests;
+
+    list->tests = calloc(list->capacity, sizeof(struct baro__test));
+    for (size_t i = 0; i < list->size; i++) {
+      list->tests[i] = old_tests[i];
+    }
+
+    free(old_tests);
+  }
+
+  list->tests[list->size++] = *test;
+}
+
+#define BARO__STDOUT_BUF_SIZE 4096
+
+struct baro__context {
+  struct baro__test_list tests;
+  struct baro__test *current_test;
+
+  size_t num_tests;
+  size_t num_tests_failed;
+
+  size_t num_asserts;
+  size_t num_asserts_failed;
+
+  struct baro__tag_list subtest_stack;
+  struct baro__hash_set passed_subtests;
+  int subtest_max_size;
+  int should_reenter_subtest;
+  int subtest_entered;
+
+  jmp_buf env;
+
+  int real_stdout;
+  char stdout_buffer[BARO__STDOUT_BUF_SIZE];
+};
+
+extern struct baro__context baro__c;
+
+static inline void baro__context_create(struct baro__context *context) {
+  baro__test_list_create(&context->tests, 128);
+  context->current_test = NULL;
+
+  context->num_tests = context->num_tests_failed = 0;
+  context->num_asserts = context->num_asserts_failed = 0;
+
+  baro__tag_list_create(&context->subtest_stack, 8);
+  baro__hash_set_create(&context->passed_subtests);
+  context->subtest_max_size = 0;
+  context->should_reenter_subtest = 0;
+  context->subtest_entered = 0;
+
+  context->real_stdout = -1;
+  memset(context->stdout_buffer, 0, BARO__STDOUT_BUF_SIZE);
+}
+
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
+static inline void baro__redirect_output(struct baro__context *context, int enable) {
+  if (enable) {
+    fflush(stdout);
+    context->real_stdout = dup(1);
+    freopen("NUL", "a", stdout);
+    setvbuf(stdout, baro__c.stdout_buffer, _IOFBF, BARO__STDOUT_BUF_SIZE);
+  } else if (context->real_stdout != -1) {
+    freopen("NUL", "a", stdout);
+    dup2(context->real_stdout, 1);
+    setvbuf(stdout, NULL, _IONBF, 0);
+  }
+}
+
+extern int baro__init;
+
+static inline void baro__register_test(void (*test_func)(void), struct baro__tag * tag) {
+  if (!baro__init) {
+    baro__context_create(&baro__c);
+    baro__init = 1;
+  }
+
+  struct baro__test test = {.func=test_func, .tag=tag};
+  baro__test_list_add(&baro__c.tests, &test);
+}
+
+static inline int baro__check_subtest(struct baro__tag * const tag) {
+  if (baro__c.subtest_stack.size < baro__c.subtest_max_size) {
+    baro__c.should_reenter_subtest = 1;
+    return 0;
+  }
+
+  baro__tag_list_push(&baro__c.subtest_stack, tag);
+  if (baro__hash_set_contains(&baro__c.passed_subtests,
+                              baro__tag_list_hash(&baro__c.subtest_stack))) {
+    baro__tag_list_pop(&baro__c.subtest_stack);
+    return 0;
+  }
+
+  baro__c.subtest_max_size = baro__c.subtest_stack.size;
+  baro__c.subtest_entered = 1;
+  return 1;
+}
+
+static inline void baro__exit_subtest() {
+  if (baro__c.subtest_entered) {
+    if (!baro__c.should_reenter_subtest) {
+      baro__hash_set_add(&baro__c.passed_subtests, baro__tag_list_hash(&baro__c.subtest_stack));
+    }
+
+    baro__tag_list_pop(&baro__c.subtest_stack);
+  }
+}
+
+#define BARO__SEPARATOR "============================================================\n"
+
+static inline void baro__assert(int condition, const char *desc, int required, const char *file_name, int line_num) {
+  baro__c.num_asserts++;
+
+  if (!condition) {
+    baro__c.num_asserts_failed++;
+
+    baro__redirect_output(&baro__c, 0);
+
+    printf("%s failed: %s (%s:%d)\n", required ? "Require" : "Check", desc, file_name, line_num);
+
+    struct baro__test *test = baro__c.current_test;
+    printf("  In: %s (%s:%d)\n",
+           test->tag->desc, test->tag->file_name, test->tag->line_num);
+
+    for (int i = 0; i < baro__c.subtest_stack.size; i++) {
+      struct baro__tag *subtest_tag = baro__c.subtest_stack.tags[i];
+      printf("%*cUnder: %s (%s:%d)\n", (i + 2) * 2, ' ',
+             subtest_tag->desc, subtest_tag->file_name, subtest_tag->line_num);
+    }
+
+    if (baro__c.stdout_buffer[0]) {
+      printf("Captured output:\n%s\n", baro__c.stdout_buffer);
+
+      memset(baro__c.stdout_buffer, 0, BARO__STDOUT_BUF_SIZE);
+    }
+
+    printf(BARO__SEPARATOR);
+
+    baro__redirect_output(&baro__c, 1);
+
+    if (required) {
+      longjmp(baro__c.env, 1);
+    }
+  }
+}
+
+#define BARO__CONCAT(a, b) BARO__CONCAT_INTERNAL(a, b)
+#define BARO__CONCAT_INTERNAL(a, b) a##b
+
+#define BARO__WITH_COUNTER(x) BARO__CONCAT(x, __COUNTER__)
+
+#ifdef _MSC_VER
+#pragma section(".CRT$XCU", read)
+#define BARO__INITIALIZER(f) \
+  static void f(void); \
+  __declspec(allocate(".CRT$XCU")) static void (*f##_init)(void) = f; \
+  static void f(void)
+#else
+#define BARO__INITIALIZER(f) \
+  __attribute__((constructor)) static void f(void)
+#endif
+
+#define BARO__CREATE_TEST_REGISTRAR(func_name, desc) \
+  static struct baro__tag func_name##_tag = { desc, __FILE__, __LINE__ }; \
+  BARO__INITIALIZER(func_name##_registrar) {              \
+    baro__register_test(func_name, &func_name##_tag); \
+  }
+
+#ifdef BARO_ENABLE
+#define BARO__TEST_FUNC(func_name, desc) \
+  static void func_name(void); \
+  BARO__CREATE_TEST_REGISTRAR(func_name, desc) \
+  static void func_name(void)
+#else
+#define BARO__TEST_FUNC(func_name, ...) \
+  static void func_name(void)
+#endif
+
+#define BARO_TEST(desc) \
+  BARO__TEST_FUNC(BARO__WITH_COUNTER(BARO_TEST_), desc)
+
+#ifdef BARO_ENABLE
+#define BARO__SUBTEST_WRAPPER(desc, counter) \
+  static struct baro__tag BARO__CONCAT(baro__subtest_tag_, counter) = { desc, __FILE__, __LINE__ }; \
+  const int BARO__CONCAT(baro__enter_subtest_, counter) = baro__check_subtest(&BARO__CONCAT(baro__subtest_tag_, counter)); \
+  if (BARO__CONCAT(baro__enter_subtest_, counter)) goto BARO__CONCAT(baro__subtest_, counter); \
+  while (BARO__CONCAT(baro__enter_subtest_, counter)) if (1) { baro__exit_subtest(); break; } \
+  else BARO__CONCAT(baro__subtest_, counter):
+#else
+#define BARO__SUBTEST_WRAPPER(...)
+#endif
+
+#define BARO_SUBTEST(desc) \
+  BARO__SUBTEST_WRAPPER(desc, __COUNTER__)
+
+#define BARO__GET2(_1, _2, NAME, ...) NAME
+
+#define BARO__CHECK1(condition) \
+  baro__assert(condition, #condition, 0, __FILE__, __LINE__)
+
+#define BARO__CHECK2(condition, desc) \
+  baro__assert(condition, desc, 0, __FILE__, __LINE__)
+
+#define BARO_CHECK(...) \
+  BARO__GET2(__VA_ARGS__, BARO__CHECK2, BARO__CHECK1)(__VA_ARGS__)
+
+#define BARO__REQUIRE1(condition) \
+  baro__assert(condition, #condition, 1, __FILE__, __LINE__)
+
+#define BARO__REQUIRE2(condition, desc) \
+  baro__assert(condition, desc, 1, __FILE__, __LINE__)
+
+#define BARO_REQUIRE(...) \
+  BARO__GET2(__VA_ARGS__, BARO__REQUIRE2, BARO__REQUIRE1)(__VA_ARGS__)
+
+#ifndef BARO_NO_SHORT
+#define TEST BARO_TEST
+#define SUBTEST BARO_SUBTEST
+#define CHECK BARO_CHECK
+#define REQUIRE BARO_REQUIRE
+#endif
+
+#ifdef BARO_MAIN
+int baro__init = 0;
+struct baro__context baro__c;
+
+int main(int argc, char *argv[]) {
+  size_t num_tests = baro__c.tests.size;
+  printf("Running %zu test%s\n", num_tests, num_tests > 1 ? "s" : "");
+
+  printf(BARO__SEPARATOR);
+
+  baro__redirect_output(&baro__c, 1);
+
+  for (size_t i = 0; i < num_tests; i++) {
+    struct baro__test *test = &baro__c.tests.tests[i];
+    baro__c.current_test = test;
+
+    int run_test = 1;
+
+    if (setjmp(baro__c.env)) {
+      baro__c.num_tests_failed++;
+      run_test = 0;
+    }
+
+    while (run_test) {
+      baro__c.should_reenter_subtest = 0;
+      baro__c.subtest_max_size = 0;
+      baro__tag_list_clear(&baro__c.subtest_stack);
+
+      test->func();
+
+      if (!baro__c.should_reenter_subtest) {
+        run_test = 0;
+      }
+    }
+
+    baro__c.num_tests++;
+  }
+
+  baro__redirect_output(&baro__c, 0);
+
+  printf("tests:   %5zu total | %5zu passed | %5zu failed\n",
+         baro__c.num_tests, baro__c.num_tests - baro__c.num_tests_failed,
+         baro__c.num_tests_failed);
+
+  printf("asserts: %5zu total | %5zu passed | %5zu failed\n",
+         baro__c.num_asserts, baro__c.num_asserts - baro__c.num_asserts_failed,
+         baro__c.num_asserts_failed);
+
+  return baro__c.num_tests_failed;
+}
+#endif
+#endif //BARO_3FDC036FA2C64C72A0DB6BA1033C678B
