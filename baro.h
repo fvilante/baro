@@ -15,14 +15,18 @@ struct baro__tag {
 
 struct baro__tag_list {
   struct baro__tag ** tags;
-  int size;
-  int capacity;
+  size_t size;
+  size_t capacity;
 };
 
-static inline void baro__tag_list_create(struct baro__tag_list *list, int capacity) {
+static inline void baro__tag_list_create(struct baro__tag_list *list, size_t capacity) {
   list->tags = calloc(capacity, sizeof(struct baro__tag *));
   list->size = 0;
   list->capacity = capacity;
+}
+
+static inline size_t baro__tag_list_size(struct baro__tag_list *list) {
+  return list->size;
 }
 
 static inline void baro__tag_list_destroy(struct baro__tag_list *list) {
@@ -173,6 +177,10 @@ static inline void baro__test_list_create(struct baro__test_list *list, size_t c
   list->capacity = capacity;
 }
 
+static inline size_t baro__test_list_size(struct baro__test_list *list) {
+  return list->size;
+}
+
 static inline void baro__test_list_add(struct baro__test_list *list, struct baro__test *test) {
   if (list->size == list->capacity) {
     list->capacity *= 2;
@@ -197,7 +205,7 @@ struct baro__context {
   struct baro__test *current_test;
   int current_test_failed;
 
-  size_t num_tests;
+  size_t num_tests_ran;
   size_t num_tests_failed;
 
   size_t num_asserts;
@@ -215,6 +223,10 @@ struct baro__context {
   char stdout_buffer[BARO__STDOUT_BUF_SIZE];
 };
 
+static inline size_t baro__context_num_tests(struct baro__context *context) {
+  return context->num_tests_ran;
+}
+
 extern struct baro__context baro__c;
 
 static inline void baro__context_create(struct baro__context *context) {
@@ -222,7 +234,7 @@ static inline void baro__context_create(struct baro__context *context) {
   context->current_test = NULL;
   context->current_test_failed = 0;
 
-  context->num_tests = context->num_tests_failed = 0;
+  context->num_tests_ran = context->num_tests_failed = 0;
   context->num_asserts = context->num_asserts_failed = 0;
 
   baro__tag_list_create(&context->subtest_stack, 8);
@@ -267,12 +279,9 @@ static inline void baro__redirect_output(struct baro__context *context, int enab
   }
 }
 
-extern int baro__init;
-
 static inline void baro__register_test(void (*test_func)(void), struct baro__tag * tag) {
-  if (!baro__init) {
+  if (baro__test_list_size(&baro__c.tests) == 0) {
     baro__context_create(&baro__c);
-    baro__init = 1;
   }
 
   struct baro__test test = {.func=test_func, .tag=tag};
@@ -280,7 +289,7 @@ static inline void baro__register_test(void (*test_func)(void), struct baro__tag
 }
 
 static inline int baro__check_subtest(struct baro__tag * const tag) {
-  if (baro__c.subtest_stack.size < baro__c.subtest_max_size) {
+  if (baro__tag_list_size(&baro__c.subtest_stack) < baro__c.subtest_max_size) {
     baro__c.should_reenter_subtest = 1;
     return 0;
   }
@@ -714,13 +723,13 @@ int getopt(int num_args, char * const *args, char const *opts) {
   return opt;
 }
 
-int baro__init = 0;
-struct baro__context baro__c;
+struct baro__context baro__c = {0};
 
 int main(int argc, char *argv[]) {
   size_t num_partitions = 1;
   size_t cur_partition = 0;
 
+  // Parse command line options
   int c;
   while ((c = getopt(argc, argv, "hp:n:")) != -1) {
     switch (c) {
@@ -747,8 +756,8 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Invalid number of partitions: %zu\n", num_partitions);
   }
 
+  // Partition the tests if we are in a multiprocess workflow
   size_t partition_size = (num_tests + (num_partitions - 1)) / num_partitions;
-
   size_t first_test = partition_size * cur_partition;
   size_t last_test = first_test + partition_size;
   if (last_test >= num_tests) {
@@ -758,7 +767,6 @@ int main(int argc, char *argv[]) {
   size_t num_tests_to_run = last_test - first_test;
   printf("Running %zu out of %zu test%s\n", num_tests_to_run, num_tests,
          num_tests > 1 ? "s" : "");
-
   if (num_partitions > 1) {
     printf("(Partition %zu: tests %zu to %zu)\n", cur_partition, first_test, last_test - 1);
   }
@@ -767,30 +775,35 @@ int main(int argc, char *argv[]) {
 
   baro__redirect_output(&baro__c, 1);
 
+  // Begin running tests serially
   for (size_t i = first_test; i < last_test; i++) {
     struct baro__test *test = &baro__c.tests.tests[i];
     baro__c.current_test = test;
     baro__c.current_test_failed = 0;
+    baro__hash_set_clear(&baro__c.passed_subtests);
 
     int run_test = 1;
 
+    // Recover from required assertion failures
     if (setjmp(baro__c.env)) {
       run_test = 0;
     }
 
     while (run_test) {
+      // Reset the current subtest stack
       baro__c.should_reenter_subtest = 0;
       baro__c.subtest_max_size = 0;
       baro__tag_list_clear(&baro__c.subtest_stack);
 
       test->func();
 
+      // Keep looping until all subtest permutations have been visited
       if (!baro__c.should_reenter_subtest) {
         run_test = 0;
       }
     }
 
-    baro__c.num_tests++;
+    baro__c.num_tests_ran++;
     if (baro__c.current_test_failed) {
       baro__c.num_tests_failed++;
     }
@@ -799,7 +812,7 @@ int main(int argc, char *argv[]) {
   baro__redirect_output(&baro__c, 0);
 
   printf("tests:   %5zu total | %5zu passed | %5zu failed\n",
-         baro__c.num_tests, baro__c.num_tests - baro__c.num_tests_failed,
+         baro__c.num_tests_ran, baro__c.num_tests_ran - baro__c.num_tests_failed,
          baro__c.num_tests_failed);
 
   printf("asserts: %5zu total | %5zu passed | %5zu failed\n",
