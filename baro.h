@@ -7,6 +7,7 @@
 #include <string.h>
 #include <setjmp.h>
 
+#ifdef BARO_ENABLE
 struct baro__tag {
   const char *desc;
   const char *file_name;
@@ -71,7 +72,7 @@ static inline int baro__tag_list_pop(struct baro__tag_list *list, struct baro__t
 static inline uint64_t baro__tag_list_hash(struct baro__tag_list *list) {
   uint64_t hash = 0;
 
-  for (int i = 0; i < list->size; i++) {
+  for (size_t i = 0; i < list->size; i++) {
     uint64_t a = (uint64_t)list->tags[i] + i;
     a ^= a >> 33u;
     a *= 0xff51afd7ed558ccdL;
@@ -213,7 +214,7 @@ struct baro__context {
 
   struct baro__tag_list subtest_stack;
   struct baro__hash_set passed_subtests;
-  int subtest_max_size;
+  size_t subtest_max_size;
   int should_reenter_subtest;
   int subtest_entered;
 
@@ -257,12 +258,11 @@ static inline void baro__context_create(struct baro__context *context) {
 #endif
 
 static inline void baro__redirect_output(struct baro__context *context, int enable) {
-  FILE *dummy = NULL;
-
   if (enable) {
     fflush(stdout);
     context->real_stdout = dup(1);
 #ifdef _WIN32
+    FILE *dummy;
     freopen_s(&dummy, "NUL", "a", stdout);
 #else
     freopen("NUL", "a", stdout);
@@ -270,6 +270,7 @@ static inline void baro__redirect_output(struct baro__context *context, int enab
     setvbuf(stdout, baro__c.stdout_buffer, _IOFBF, BARO__STDOUT_BUF_SIZE);
   } else if (context->real_stdout != -1) {
 #ifdef _WIN32
+    FILE *dummy;
     freopen_s(&dummy, "NUL", "a", stdout);
 #else
     freopen("NUL", "a", stdout);
@@ -332,9 +333,9 @@ static inline void baro__assert_failed(int required) {
   printf("  In: %s (%s:%d)\n",
          test->tag->desc, test->tag->file_name, test->tag->line_num);
 
-  for (int i = 0; i < baro__c.subtest_stack.size; i++) {
+  for (size_t i = 0; i < baro__c.subtest_stack.size; i++) {
     struct baro__tag *subtest_tag = baro__c.subtest_stack.tags[i];
-    printf("%*cUnder: %s (%s:%d)\n", (i + 2) * 2, ' ',
+    printf("%*cUnder: %s (%s:%d)\n", (int)(i + 2) * 2, ' ',
            subtest_tag->desc, subtest_tag->file_name, subtest_tag->line_num);
   }
 
@@ -459,6 +460,11 @@ static inline void baro__assert_str(const char *lhs, const char *lhs_str, char c
     baro__assert_failed(required);
   }
 }
+#else
+#define baro__assert1(...)
+#define baro__assert2(...)
+#define baro__assert_str(...);
+#endif //BARO_ENABLE
 
 #define BARO__CONCAT(a, b) BARO__CONCAT_INTERNAL(a, b)
 #define BARO__CONCAT_INTERNAL(a, b) a##b
@@ -821,5 +827,5 @@ int main(int argc, char *argv[]) {
 
   return baro__c.num_tests_failed;
 }
-#endif
+#endif //BARO_MAIN
 #endif //BARO_3FDC036FA2C64C72A0DB6BA1033C678B
