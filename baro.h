@@ -73,8 +73,9 @@ static inline int baro__tag_list_pop(struct baro__tag_list *list, struct baro__t
     }
 
     if (tag) {
-        *tag = *list->tags[--list->size];
+        *tag = *list->tags[list->size - 1];
     }
+    list->size--;
 
     return 1;
 }
@@ -795,12 +796,14 @@ struct baro__context baro__c = {0};
 
 int main(int argc, char *argv[]) {
     int show_passed_tests = 0;
+    int suppress_output = 1;
+    int stop_after_failure = 0;
     size_t num_partitions = 1;
     size_t cur_partition = 0;
 
     // Parse command line options
     int c;
-    while ((c = getopt(argc, argv, "hap:n:")) != -1) {
+    while ((c = getopt(argc, argv, "haosp:n:")) != -1) {
         switch (c) {
         case 'p':
             num_partitions = atoi(optarg);
@@ -816,6 +819,14 @@ int main(int argc, char *argv[]) {
 
         case 'a':
             show_passed_tests = 1;
+            break;
+
+        case 'o':
+            suppress_output = 0;
+            break;
+
+        case 's':
+            stop_after_failure = 1;
             break;
 
         default:
@@ -846,7 +857,7 @@ int main(int argc, char *argv[]) {
 
     printf(BARO__SEPARATOR);
 
-    baro__redirect_output(&baro__c, 1);
+    baro__redirect_output(&baro__c, suppress_output);
 
     // Begin running tests serially
     for (size_t i = first_test; i < last_test; i++) {
@@ -879,11 +890,14 @@ int main(int argc, char *argv[]) {
         baro__c.num_tests_ran++;
         if (baro__c.current_test_failed) {
             baro__c.num_tests_failed++;
+            if (stop_after_failure) {
+                break;
+            }
         } else if (show_passed_tests) {
             baro__redirect_output(&baro__c, 0);
             printf(BARO__GREEN "Passed: %s (%s:%d)\n" BARO__UNSET_COLOR BARO__SEPARATOR,
                    test->tag->desc, test->tag->file_name, test->tag->line_num);
-            baro__redirect_output(&baro__c, 1);
+            baro__redirect_output(&baro__c, suppress_output);
         }
     }
 
