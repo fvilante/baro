@@ -758,7 +758,7 @@ int main(int argc, char *argv[]) {
   }
 
   size_t num_tests = baro__c.tests.size;
-  if (num_partitions < 1 || num_partitions > num_tests) {
+  if (num_tests > 0 && (num_partitions < 1 || num_partitions > num_tests)) {
     fprintf(stderr, "Invalid number of partitions: %zu\n", num_partitions);
   }
 
