@@ -72,7 +72,25 @@ file containing a `BARO_MAIN` definition (such as the provided `baro.c`):
 ```
 
 Also, make sure to add a `BARO_ENABLE` definition to all files including
-`baro.h`, otherwise the tests will not be generated. Run the binary and viola:
+`baro.h`, otherwise the tests will not be generated:
+- Directly via `gcc`/`clang`, you can add `-DBARO_ENABLE`:
+  ```
+  gcc source.c -DBARO_ENABLE
+  ```
+- With `make`, you can add it to your `CFLAGS`:
+  ```plain
+  CFLAGS += -DBARO_ENABLE
+
+  target: source.c
+    $(CC) $(CFLAGS) -o target $^
+  ```
+- With `cmake`, you can add it as a compile definition to a target:
+  ```cmake
+  add_executable(test-my-stuff ext/baro/baro.c ${MY_SOURCE_FILES})
+  target_compile_definitions(test-my-stuff PRIVATE BARO_ENABLE)
+  ```
+
+Run the binary and viola:
 
 ```plain
 > ./magic-tests
@@ -93,31 +111,33 @@ asserts:    18 total |    17 passed |     1 failed
 ### Macros
 
 `baro`'s interface is exposed entirely through macros. By default, these macros
-are in short form, however a prefix can be required by defining
+are in short form, however a `BARO_` prefix can be required by defining
 `BARO_NO_SHORT`.
 
 #### Assertions
 
-Assertions begin with either `CHECK` or `REQUIRE`. `REQUIRE` will stop
-execution and fail a test immediately on failure. `CHECK`, however, will
-mark a test as failed but continue executing it.
+Assertions begin with either `CHECK` or `REQUIRE`. Whereas `REQUIRE` will stop
+the execution of a test after marking it as failed, `CHECK` will let the test
+continue running.
 
 |`baro.h` code|`assert.h` equivalent|
 |----|----------|
-|`CHECK(x)`|`assert(x)`|
-|`CHECK_FALSE(x)`|`assert(!x)`|
-|`CHECK_EQ(a, b)`|`assert(a == b)`|
-|`CHECK_NE(a, b)`|`assert(a != b)`|
-|`CHECK_LT(a, b)`|`assert(a < b)`|
-|`CHECK_LE(a, b)`|`assert(a <= b)`|
-|`CHECK_GT(a, b)`|`assert(a > b)`|
-|`CHECK_GE(a, b)`|`assert(a >= b)`|
-|`CHECK_STR_EQ(a, b)`|`assert(!strcmp(a, b))`|
-|`CHECK_STR_NE(a, b)`|`assert(strcmp(a, b) != 0)`|
-|`CHECK_STR_ICASE_EQ(a, b)`|`assert(!strcmpi(a, b))`|
-|`CHECK_STR_ICASE_NE(a, b)`|`assert(strcmpi(a, b) != 0)`|
+|`REQUIRE(x)`|`assert(x)`|
+|`REQUIRE_FALSE(x)`|`assert(!x)`|
+|`REQUIRE_EQ(a, b)`|`assert(a == b)`|
+|`REQUIRE_NE(a, b)`|`assert(a != b)`|
+|`REQUIRE_LT(a, b)`|`assert(a < b)`|
+|`REQUIRE_LE(a, b)`|`assert(a <= b)`|
+|`REQUIRE_GT(a, b)`|`assert(a > b)`|
+|`REQUIRE_GE(a, b)`|`assert(a >= b)`|
+|`REQUIRE_STR_EQ(a, b)`|`assert(!strcmp(a, b))`|
+|`REQUIRE_STR_NE(a, b)`|`assert(strcmp(a, b) != 0)`|
+|`REQUIRE_STR_ICASE_EQ(a, b)`|`assert(!strcmpi(a, b))`|
+|`REQUIRE_STR_ICASE_NE(a, b)`|`assert(strcmpi(a, b) != 0)`|
 
-A message can also be provided with any assertion as a last parameter, e.g.:
+A descriptive message can be provided to display on failure by passing in
+another parameter to any assertion:
+
 ```c
 REQUIRE(file_exists("foo.txt"), "need test data file");
 CHECK_STR_EQ(get_name(), "testuser", "name should be populated");
@@ -165,8 +185,8 @@ multiple subtests will be executed once for every leaf node, meaning that
         SUBTEST("2.4") {
             printf("2.4\n");
         }
-        printf("\n");
     }
+    printf("\n");
 }</pre></td>
 <td><pre>begin
 1
@@ -213,22 +233,22 @@ By default, all test cases are ran in a single thread. You can speed up
 execution and parallelize by creating multiple processes with the partitioning
 arguments:
 
-- `-n <current_partition>` sets the current partition index (0-based)
+- `-n <current_partition>` sets the current partition index (1-based)
 - `-p <partition_count>` sets the total number of partitions to make (1-based)
 
 For example, if we have 100 tests and want to partition across five processes:
 ```bash
-./tests -n 0 -p 5 # runs tests 0-19 inclusive 
-./tests -n 1 -p 5 # " 20-39
-./tests -n 2 -p 5 # " 40-59
-./tests -n 3 -p 5 # " 60-79
-./tests -n 4 -p 5 # " 80-99
+./tests -n 1 -p 5 # runs tests 0-19 inclusive
+./tests -n 2 -p 5 # " 20-39
+./tests -n 3 -p 5 # " 40-59
+./tests -n 4 -p 5 # " 60-79
+./tests -n 5 -p 5 # " 80-99
 ```
 
 Or, with GNU Parallel:
 
 ```bash
-parallel ./tests -n {} -p 5 ::: {0..4}
+parallel ./tests -n {} -p 5 ::: {1..5}
 ```
 
 ## License

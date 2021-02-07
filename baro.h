@@ -1,13 +1,13 @@
 #ifndef BARO_3FDC036FA2C64C72A0DB6BA1033C678B
 #define BARO_3FDC036FA2C64C72A0DB6BA1033C678B
 
+#ifdef BARO_ENABLE
 #include <setjmp.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef BARO_ENABLE
 #ifdef _WIN32
 #define BARO__RED ""
 #define BARO__GREEN ""
@@ -799,7 +799,7 @@ int main(int argc, char *argv[]) {
     int suppress_output = 1;
     int stop_after_failure = 0;
     size_t num_partitions = 1;
-    size_t cur_partition = 0;
+    size_t cur_partition = 1;
 
     // Parse command line options
     int c;
@@ -815,7 +815,7 @@ int main(int argc, char *argv[]) {
 
         case 'h':
             printf("baro unit tests\n");
-            exit(0);
+            return 0;
 
         case 'a':
             show_passed_tests = 1;
@@ -831,18 +831,26 @@ int main(int argc, char *argv[]) {
 
         default:
             fprintf(stderr, "Unknown arguments: run with -h for help\n");
-            exit(1);
+            return -1;
         }
     }
 
     size_t num_tests = baro__c.tests.size;
     if (num_tests > 0 && (num_partitions < 1 || num_partitions > num_tests)) {
-        fprintf(stderr, "Invalid number of partitions: %zu\n", num_partitions);
+        fprintf(stderr, "Invalid number of partitions %zu, value should be"
+                        "between 1 and %zu\n", num_partitions, num_tests);
+        return -1;
+    }
+
+    if (cur_partition < 1 || cur_partition > num_partitions) {
+        fprintf(stderr, "Invalid current partition %zu, value should between 1"
+                        " and %zu inclusive\n", cur_partition, num_partitions);
+        return -1;
     }
 
     // Partition the tests if we are in a multiprocess workflow
     size_t partition_size = (num_tests + (num_partitions - 1)) / num_partitions;
-    size_t first_test = partition_size * cur_partition;
+    size_t first_test = partition_size * (cur_partition - 1);
     size_t last_test = first_test + partition_size;
     if (last_test >= num_tests) {
         last_test = num_tests;
