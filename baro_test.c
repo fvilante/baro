@@ -66,6 +66,12 @@ TEST("Asserts") {
   REQUIRE_STR_ICASE_NE("bar", "foobar", "Not equal (case insensitive)");
 }
 
+static inline void baro__tag_list_destroy(struct baro__tag_list *list) {
+    if (list->tags) {
+        free(list->tags);
+    }
+}
+
 TEST("Tag list") {
   struct baro__tag_list list;
   baro__tag_list_create(&list, 2);
