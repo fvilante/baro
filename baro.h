@@ -40,12 +40,6 @@ static inline size_t baro__tag_list_size(struct baro__tag_list *list) {
     return list->size;
 }
 
-static inline void baro__tag_list_destroy(struct baro__tag_list *list) {
-    if (list->tags) {
-        free(list->tags);
-    }
-}
-
 static inline void baro__tag_list_clear(struct baro__tag_list *list) {
     list->size = 0;
 }
@@ -235,10 +229,6 @@ struct baro__context {
     char stdout_buffer[BARO__STDOUT_BUF_SIZE];
 };
 
-static inline size_t baro__context_num_tests(struct baro__context *context) {
-    return context->num_tests_ran;
-}
-
 extern struct baro__context baro__c;
 
 static inline void baro__context_create(struct baro__context *context) {
@@ -369,7 +359,7 @@ static inline void baro__assert1(size_t cond, char const *cond_str, int expected
                                  const char *desc, const char *file_name, int line_num) {
     baro__c.num_asserts++;
 
-    int pass = (!!cond == !!expected);
+    int pass = ((cond != 0) == (expected != 0));
 
     if (!pass) {
         baro__c.current_test_failed = 1;
@@ -432,8 +422,8 @@ static inline void baro__assert_str(const char *lhs, const char *lhs_str, char c
     baro__c.num_asserts++;
 
     int pass =
-            (case_sensitive && !!strcmp(lhs, rhs) == !equal) ||
-            (!case_sensitive && !!strcasecmp(lhs, rhs) == !equal);
+            (case_sensitive && (strcmp(lhs, rhs) != 0) == !equal) ||
+            (!case_sensitive && (strcasecmp(lhs, rhs) != 0) == !equal);
 
     if (!pass) {
         baro__c.current_test_failed = 1;
@@ -806,11 +796,11 @@ int main(int argc, char *argv[]) {
     while ((c = getopt(argc, argv, "haosp:n:")) != -1) {
         switch (c) {
         case 'p':
-            num_partitions = atoi(optarg);
+            num_partitions = strtol(optarg, NULL, 10);
             break;
 
         case 'n':
-            cur_partition = atoi(optarg);
+            cur_partition = strtol(optarg, NULL, 10);
             break;
 
         case 'h':

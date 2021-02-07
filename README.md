@@ -135,6 +135,22 @@ continue running.
 |`REQUIRE_STR_ICASE_EQ(a, b)`|`assert(!strcmpi(a, b))`|
 |`REQUIRE_STR_ICASE_NE(a, b)`|`assert(strcmpi(a, b) != 0)`|
 
+Note that both `REQUIRE(a < b)` is functionally equivalent to
+`REQUIRE_LT(a, b)`, however the latter will provide more information for
+investigating failures:
+
+<table><thead><tr>
+<th><code>REQUIRE(a < b)</code></th>
+<th><code>REQUIRE_LT(a, b)</code></th>
+</tr></thead><tbody><tr>
+<td><pre>Require failed:
+    a < b != 0
+==> 0 != 0</pre></td>
+<td><pre>Require failed:
+    a < b
+==> 2 < 1</pre></td>
+</tr></tbody></table>
+
 A descriptive message can be provided to display on failure by passing in
 another parameter to any assertion:
 
@@ -150,10 +166,10 @@ scope is the root, and each `SUBTEST` creates a child node. A test with
 multiple subtests will be executed once for every leaf node, meaning that
 `SUBTEST` branches at the same level can work independently. For example:
 
-<table><tr>
-<td>Code</td>
-<td>Output</td>
-</tr><tr>
+<table><thead><tr>
+<th>Code</th>
+<th>Output</th>
+</tr></thead><tbody><tr>
 <td><pre>TEST("i like subtests") {
     printf("begin\n");
     SUBTEST("1") {
@@ -215,7 +231,7 @@ begin
 begin
 2
 2.4</pre></td>
-</tr></table>
+</tr></tbody></table>
 
 ### Command-line arguments
 
