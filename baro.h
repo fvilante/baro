@@ -496,7 +496,7 @@ static inline void baro__assert_str(const char *lhs, const char *lhs_str, char c
     static void func_name(void)
 #else
 #define BARO__TEST_FUNC(func_name, ...) \
-    static void func_name(void)
+    static void __attribute__((unused)) func_name(void)
 #endif
 
 #define BARO_TEST(desc) \
