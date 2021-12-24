@@ -595,7 +595,7 @@ static inline void baro__assert_str(const char *lhs, const char *lhs_str, char c
 #define BARO__GET2(_1, _2, NAME, ...) NAME
 #define BARO__GET3(_1, _2, _3, NAME, ...) NAME
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define BARO__X(x) x
 #define BARO_CHECK(...) BARO__X(BARO__GET2(__VA_ARGS__, BARO__CHECK2, BARO__CHECK1)) \
 BARO__X((__VA_ARGS__))
