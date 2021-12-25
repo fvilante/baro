@@ -534,11 +534,26 @@ static inline void baro__assert_str(
     __attribute__((constructor)) static void f(void)
 #endif//_MSC_VER
 
+// From https://stackoverflow.com/a/41367919
+#define BARO__STRIP_PATH(s)\
+    (sizeof(s) > 2 && (s)[sizeof(s)-2] == '/' ? (s) + sizeof(s) - 1 : \
+    sizeof(s) > 3 && (s)[sizeof(s)-3] == '/' ? (s) + sizeof(s) - 2 : \
+    sizeof(s) > 4 && (s)[sizeof(s)-4] == '/' ? (s) + sizeof(s) - 3 : \
+    sizeof(s) > 5 && (s)[sizeof(s)-5] == '/' ? (s) + sizeof(s) - 4 : \
+    sizeof(s) > 6 && (s)[sizeof(s)-6] == '/' ? (s) + sizeof(s) - 5 : \
+    sizeof(s) > 7 && (s)[sizeof(s)-7] == '/' ? (s) + sizeof(s) - 6 : \
+    sizeof(s) > 8 && (s)[sizeof(s)-8] == '/' ? (s) + sizeof(s) - 7 : \
+    sizeof(s) > 9 && (s)[sizeof(s)-9] == '/' ? (s) + sizeof(s) - 8 : \
+    sizeof(s) > 10 && (s)[sizeof(s)-10] == '/' ? (s) + sizeof(s) - 9 : \
+    sizeof(s) > 11 && (s)[sizeof(s)-11] == '/' ? (s) + sizeof(s) - 10 : (s))
+
+#define BARO__FILE BARO__STRIP_PATH(__FILE__)
+
 // All test functions are registered by a "registrar function" sometime during
 // runtime initialization. This is used to automatically build a list of all
 // tests, across compilation units, for the test runner.
 #define BARO__CREATE_TEST_REGISTRAR(func_name, desc)                      \
-    static const struct baro__tag func_name##_tag = {desc, __FILE__, __LINE__}; \
+    static const struct baro__tag func_name##_tag = {desc, BARO__FILE, __LINE__}; \
     BARO__INITIALIZER(func_name##_registrar) {                            \
         baro__register_test(func_name, &func_name##_tag);                 \
     }

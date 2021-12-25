@@ -64,12 +64,21 @@ A C99 unit testing framework that is:
 
 2. Create a new build target with all the same source files, except the file
    containing the `main` function. Instead, use the provided `baro.c`.
-    - With CMake, 
+   - With CMake:
+     ```cmake
+     # add_executable(app app.c main.c)
+     
+     add_executable(tests app.c ext/baro/baro.c)
+     
+     enable_testing()
+     add_test(app tests)
+     ```
 
-3. Define `BARO_ENABLED` for this new build target.
+3. Define `BARO_ENABLED` for this new build target only (and _not_ for any 
+   non-test targets).
    - With `gcc`/`clang`, pass `-DBARO_ENABLE`:
      ```plain
-     gcc source.c baro.c -DBARO_ENABLE
+     gcc source.c baro.c -o tests -DBARO_ENABLE
      ```
 
    - With `cmake`, add it as a compile definition:
@@ -77,7 +86,7 @@ A C99 unit testing framework that is:
      target_compile_definitions(tests PRIVATE BARO_ENABLE)
      ```
 
-4. Build and run the new build target:
+5. Build and run the new build target:
     ```plain
     > ./tests
     Running 10 out of 10 tests

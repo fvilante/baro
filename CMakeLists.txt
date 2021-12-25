@@ -3,8 +3,27 @@ project(baro C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(baro-tests baro.c baro_test.c)
-target_compile_definitions(baro-tests PRIVATE BARO_ENABLE BARO_SELF_TEST)
-
 enable_testing()
-add_test(baro baro-tests)
+
+add_executable(baro-test baro.c baro_test.c)
+target_compile_definitions(baro-test PRIVATE BARO_ENABLE BARO_SELF_TEST)
+
+add_test(self-tests baro-test)
+
+foreach(test basic)
+    add_executable("example-${test}" "examples/${test}.c" baro.c)
+    target_compile_definitions("example-${test}" PRIVATE BARO_ENABLE)
+    target_include_directories("example-${test}" PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+    add_custom_command(
+            TARGET "example-${test}"
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "Running $<TARGET_FILE_NAME:example-${test}> ..."
+            COMMAND "example-${test}" -a > "${test}.txt"
+    )
+
+    add_test(
+            NAME "check-example-${test}"
+            COMMAND ${CMAKE_COMMAND} -E compare_files "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt"
+    )
+endforeach()

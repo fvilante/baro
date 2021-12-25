@@ -1,0 +1,6 @@
+Running 1 out of 1 test
+============================================================
+Passed: basic (basic.c:3)
+============================================================
+tests:       1 total |     1 passed |     0 failed
+asserts:     2 total |     2 passed |     0 failed
