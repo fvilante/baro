@@ -16,14 +16,13 @@ foreach(test basic)
     target_include_directories("example-${test}" PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
     add_custom_command(
-            TARGET "example-${test}"
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E echo "Running $<TARGET_FILE_NAME:example-${test}> ..."
-            COMMAND "example-${test}" -a > "${test}.txt"
+        TARGET "example-${test}"
+        POST_BUILD
+        COMMAND "example-${test}" -a > "${test}.txt" || exit 0
     )
 
     add_test(
-            NAME "check-example-${test}"
-            COMMAND ${CMAKE_COMMAND} -E compare_files "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt"
+        NAME "check-example-${test}"
+        COMMAND ${CMAKE_COMMAND} -E compare_files "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt"
     )
 endforeach()

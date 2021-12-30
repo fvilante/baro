@@ -9,15 +9,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef _WIN32
+//#ifdef _WIN32
 #define BARO__RED ""
 #define BARO__GREEN ""
 #define BARO__UNSET_COLOR ""
-#else
-#define BARO__RED "\x1B[31m"
-#define BARO__GREEN "\x1B[32m"
-#define BARO__UNSET_COLOR "\x1B[0m"
-#endif//_WIN32
+//#else
+//#define BARO__RED "\x1B[31m"
+//#define BARO__GREEN "\x1B[32m"
+//#define BARO__UNSET_COLOR "\x1B[0m"
+//#endif//_WIN32
 
 struct baro__tag {
     const char *desc;
