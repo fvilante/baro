@@ -20,11 +20,11 @@ macro(AddExampleTest test flags)
     add_custom_command(
         TARGET "example-${test}"
         POST_BUILD
-        COMMAND "example-${test}" "${flags}" > "${test}.txt" || exit 0)
+        COMMAND "example-${test}" "${flags}" > "${test}.txt" || (exit 0))
 
     add_test(
         NAME "check-example-${test}"
-        COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+        COMMAND diff -c --strip-trailing-cr "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
 endmacro()
 
 AddExampleTest(basic -a)
