@@ -1,0 +1,34 @@
+Running 1 out of 1 test
+============================================================
+begin
+1
+1.1
+
+begin
+2
+2.1
+
+begin
+2
+2.2
+2.2.1
+2.2.1.1
+
+begin
+2
+2.2
+2.2.1
+2.2.1.2
+
+begin
+2
+2.3
+
+begin
+2
+2.4
+
+Passed: i like subtests (subtests.c:3)
+============================================================
+tests:       1 total |     1 passed |     0 failed
+asserts:     0 total |     0 passed |     0 failed

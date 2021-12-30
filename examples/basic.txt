@@ -12,7 +12,7 @@ Check failed:
 At basic.c:5
   In: basic (basic.c:3)
 ============================================================
-Check false failed: 
+Check failed: 
     1 == 0
 ==> 1 == 0
 At basic.c:8
