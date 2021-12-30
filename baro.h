@@ -31,21 +31,27 @@ struct baro__tag_list {
     size_t capacity;
 };
 
-static inline void baro__tag_list_create(struct baro__tag_list *list, size_t capacity) {
+static inline void baro__tag_list_create(
+        struct baro__tag_list * const list,
+        size_t const capacity) {
     list->tags = calloc(capacity, sizeof(struct baro__tag *));
     list->size = 0;
     list->capacity = capacity;
 }
 
-static inline size_t baro__tag_list_size(struct baro__tag_list *list) {
+static inline size_t baro__tag_list_size(
+        struct baro__tag_list * const list) {
     return list->size;
 }
 
-static inline void baro__tag_list_clear(struct baro__tag_list *list) {
+static inline void baro__tag_list_clear(
+        struct baro__tag_list * const list) {
     list->size = 0;
 }
 
-static inline void baro__tag_list_push(struct baro__tag_list *list, const struct baro__tag *tag) {
+static inline void baro__tag_list_push(
+        struct baro__tag_list * const list,
+        struct baro__tag const * const tag) {
     if (list->size == list->capacity) {
         list->capacity *= 2;
 
@@ -62,7 +68,9 @@ static inline void baro__tag_list_push(struct baro__tag_list *list, const struct
     list->tags[list->size++] = tag;
 }
 
-static inline int baro__tag_list_pop(struct baro__tag_list *list, struct baro__tag *tag) {
+static inline int baro__tag_list_pop(
+        struct baro__tag_list * const list,
+        struct baro__tag * const tag) {
     if (list->size == 0) {
         return 0;
     }
@@ -75,9 +83,12 @@ static inline int baro__tag_list_pop(struct baro__tag_list *list, struct baro__t
     return 1;
 }
 
-static inline uint64_t baro__tag_list_hash(struct baro__tag_list *list) {
+static inline uint64_t baro__tag_list_hash(
+        struct baro__tag_list * const list) {
     uint64_t hash = 0;
 
+    // Use the address of each item in the list as build a hash, as we only
+    // expect tags to be statically allocated
     for (size_t i = 0; i < list->size; i++) {
         // Adapted from MurmurHash3's avalanche mixer
         uint64_t a = (uint64_t) list->tags[i] + i;
@@ -102,7 +113,8 @@ struct baro__hash_set {
     uint64_t *hashes;
 };
 
-static inline void baro__hash_set_create(struct baro__hash_set *set) {
+static inline void baro__hash_set_create(
+        struct baro__hash_set * const set) {
     set->nbits = 4;
     set->capacity = 1llu << set->nbits;
     set->mask = set->capacity - 1;
@@ -111,7 +123,8 @@ static inline void baro__hash_set_create(struct baro__hash_set *set) {
     set->size = 0;
 }
 
-static inline void baro__hash_set_clear(struct baro__hash_set *set) {
+static inline void baro__hash_set_clear(
+        struct baro__hash_set * const set) {
     set->size = 0;
     memset(set->hashes, 0, set->capacity * sizeof(uint64_t));
 }
@@ -119,7 +132,9 @@ static inline void baro__hash_set_clear(struct baro__hash_set *set) {
 static const uint64_t hash_set_prime_1 = 73;
 static const uint64_t hash_set_prime_2 = 5009;
 
-static inline void baro__hash_set_add_only(struct baro__hash_set *set, uint64_t hash) {
+static inline void baro__hash_set_add_only(
+        struct baro__hash_set * const set,
+        uint64_t const hash) {
     uint64_t index = set->mask & (hash_set_prime_1 * hash);
 
     while (set->hashes[index]) {
@@ -134,7 +149,8 @@ static inline void baro__hash_set_add_only(struct baro__hash_set *set, uint64_t 
     set->hashes[index] = hash;
 }
 
-static inline void baro__hash_set_grow(struct baro__hash_set *set) {
+static inline void baro__hash_set_grow(
+        struct baro__hash_set * const set) {
     if ((int) set->size > (double) set->capacity * 0.85) {
         uint64_t *prev_hashes = set->hashes;
         size_t prev_capacity = set->capacity;
@@ -156,12 +172,16 @@ static inline void baro__hash_set_grow(struct baro__hash_set *set) {
     }
 }
 
-static inline void baro__hash_set_add(struct baro__hash_set *set, uint64_t hash) {
+static inline void baro__hash_set_add(
+        struct baro__hash_set * const set,
+        uint64_t const hash) {
     baro__hash_set_add_only(set, hash);
     baro__hash_set_grow(set);
 }
 
-static inline int baro__hash_set_contains(struct baro__hash_set *set, uint64_t hash) {
+static inline int baro__hash_set_contains(
+        struct baro__hash_set * const set,
+        uint64_t const hash) {
     size_t index = set->mask & (hash_set_prime_1 * hash);
 
     while (set->hashes[index]) {
@@ -187,17 +207,22 @@ struct baro__test_list {
     size_t capacity;
 };
 
-static inline void baro__test_list_create(struct baro__test_list *list, size_t capacity) {
+static inline void baro__test_list_create(
+        struct baro__test_list * const list,
+        size_t const capacity) {
     list->tests = calloc(capacity, sizeof(struct baro__test));
     list->size = 0;
     list->capacity = capacity;
 }
 
-static inline size_t baro__test_list_size(struct baro__test_list *list) {
+static inline size_t baro__test_list_size(
+        struct baro__test_list * const list) {
     return list->size;
 }
 
-static inline void baro__test_list_add(struct baro__test_list *list, const struct baro__test *test) {
+static inline void baro__test_list_add(
+        struct baro__test_list * const list,
+        struct baro__test const * const test) {
     if (list->size == list->capacity) {
         list->capacity *= 2;
 
@@ -214,12 +239,31 @@ static inline void baro__test_list_add(struct baro__test_list *list, const struc
     list->tests[list->size++] = *test;
 }
 
+static int baro__test_list_sort_cmp(
+        void const *lhs,
+        void const *rhs) {
+    struct baro__test const *lhs_test = lhs;
+    struct baro__test const *rhs_test = rhs;
+
+    int const file_name_cmp = strcmp(lhs_test->tag->file_name, rhs_test->tag->file_name);
+    if (file_name_cmp != 0) {
+        return file_name_cmp;
+    }
+
+    return rhs_test->tag->line_num - lhs_test->tag->line_num;
+}
+
+static inline void baro__test_list_sort(
+        struct baro__test_list * const list) {
+    qsort(list->tests, list->size, sizeof(list->tests[0]), baro__test_list_sort_cmp);
+}
+
 // Maximum number of bytes to record from stdout per test
 #define BARO__STDOUT_BUF_SIZE 4096
 
 struct baro__context {
     struct baro__test_list tests;
-    struct baro__test *current_test;
+    struct baro__test const *current_test;
     int current_test_failed;
 
     size_t num_tests_ran;
@@ -242,7 +286,8 @@ struct baro__context {
 
 extern struct baro__context baro__c;
 
-static inline void baro__context_create(struct baro__context *context) {
+static inline void baro__context_create(
+        struct baro__context * const context) {
     baro__test_list_create(&context->tests, 128);
     context->current_test = NULL;
     context->current_test_failed = 0;
@@ -267,37 +312,54 @@ static inline void baro__context_create(struct baro__context *context) {
 #define dup _dup
 #define dup2 _dup2
 #define strcasecmp _stricmp
-#define freopen(...) do {                   \
-        FILE *dummy;                        \
-        freopen_s(&dummy, __VA_ARGS__);     \
-    } while (0)
 #else
 #include <unistd.h>
 #endif
 
-static inline void baro__redirect_output(struct baro__context *context, int enable) {
+static inline void baro__redirect_output(
+        struct baro__context * const context,
+        int const enable) {
     if (enable) {
         fflush(stdout);
-        context->real_stdout = dup(1);
-        freopen("NUL", "a", stdout);
+        context->real_stdout = dup(STDOUT_FILENO);
+#ifdef _WIN32
+        FILE *dummy;
+        if (freopen_s(&dummy, "NUL", "a", stdout) != 0) {
+#else
+        if (freopen("NUL", "a", stdout) == NULL) {
+#endif
+            fprintf(stderr, "Failed to redirect stdout\n");
+            exit(1);
+        }
         setvbuf(stdout, baro__c.stdout_buffer, _IOFBF, BARO__STDOUT_BUF_SIZE);
     } else if (context->real_stdout != -1) {
-        freopen("NUL", "a", stdout);
-        dup2(context->real_stdout, 1);
+#ifdef _WIN32
+        FILE *dummy;
+        if (freopen_s(&dummy, "NUL", "a", stdout) != 0) {
+#else
+        if (freopen("NUL", "a", stdout) == NULL) {
+#endif
+            fprintf(stderr, "Failed to redirect stdout\n");
+            exit(1);
+        }
+        dup2(context->real_stdout, STDOUT_FILENO);
         setvbuf(stdout, NULL, _IONBF, 0);
     }
 }
 
-static inline void baro__register_test(void (*test_func)(void), const struct baro__tag *tag) {
+static inline void baro__register_test(
+        void (* const test_func)(void),
+        struct baro__tag const * const tag) {
     if (baro__test_list_size(&baro__c.tests) == 0) {
         baro__context_create(&baro__c);
     }
 
-    const struct baro__test test = {.func = test_func, .tag = tag};
+    struct baro__test const test = {.func = test_func, .tag = tag};
     baro__test_list_add(&baro__c.tests, &test);
 }
 
-static inline int baro__check_subtest(const struct baro__tag *tag) {
+static inline int baro__check_subtest(
+        struct baro__tag const * const tag) {
     if (baro__tag_list_size(&baro__c.subtest_stack) < baro__c.subtest_max_size) {
         baro__c.should_reenter_subtest = 1;
         return 0;
@@ -315,7 +377,7 @@ static inline int baro__check_subtest(const struct baro__tag *tag) {
     return 1;
 }
 
-static inline void baro__exit_subtest() {
+static inline void baro__exit_subtest(void) {
     if (baro__c.subtest_entered) {
         if (!baro__c.should_reenter_subtest) {
             baro__hash_set_add(&baro__c.passed_subtests, baro__tag_list_hash(&baro__c.subtest_stack));
@@ -351,8 +413,9 @@ enum baro__expected_value {
     BARO__EXPECTING_TRUE,
 };
 
-static inline void baro__assert_failed(enum baro__assert_type type) {
-    struct baro__test *test = baro__c.current_test;
+static inline void baro__assert_failed(
+        enum baro__assert_type const type) {
+    struct baro__test const * const test = baro__c.current_test;
     printf("  In: %s (%s:%d)\n",
            test->tag->desc, test->tag->file_name, test->tag->line_num);
 
@@ -378,13 +441,13 @@ static inline void baro__assert_failed(enum baro__assert_type type) {
 }
 
 static inline void baro__assert1(
-        size_t value,
-        char const *value_str,
-        enum baro__expected_value expected_value,
-        enum baro__assert_type type,
-        const char *desc,
-        const char *file_name,
-        int line_num) {
+        size_t const value,
+        char const * const value_str,
+        enum baro__expected_value const expected_value,
+        enum baro__assert_type const type,
+        char const * const desc,
+        char const * const file_name,
+        int const line_num) {
     baro__c.num_asserts++;
 
     if ((value != 0) == (expected_value == BARO__EXPECTING_TRUE)) {
@@ -441,7 +504,7 @@ static inline void baro__assert2(
             cond == BARO__ASSERT_GT ? ">" :
             cond == BARO__ASSERT_GE ? ">=" : "";
 
-    char const *assert_type = (type == BARO__ASSERT_REQUIRE ? "Require" : "Check");
+    char const * const assert_type = (type == BARO__ASSERT_REQUIRE ? "Require" : "Check");
     printf(BARO__RED "%s failed: %s\n" BARO__UNSET_COLOR, assert_type, desc);
     printf("    %s %s %s\n", lhs_str, op, rhs_str);
     printf("==> %zu %s %zu\n", lhs, op, rhs);
@@ -473,12 +536,12 @@ static inline void baro__assert_str(
 
     baro__redirect_output(&baro__c, 0);
 
-    char const *op = (expected_value == BARO__EXPECTING_TRUE ? "==" : "!=");
-    char const *assert_type = (type == BARO__ASSERT_REQUIRE ? "Require" : "Check");
-    char const *sensitivity = (case_sensitivity == BARO__CASE_SENSITIVE ? "" : " (case insensitive)");
+    char const * const op = (expected_value == BARO__EXPECTING_TRUE ? "==" : "!=");
+    char const * const assert_type = (type == BARO__ASSERT_REQUIRE ? "Require" : "Check");
+    char const * const sensitivity = (case_sensitivity == BARO__CASE_SENSITIVE ? "" : " (case insensitive)");
 
-    char const *lhs_wrap = (lhs ? "\"" : "");
-    char const *rhs_wrap = (rhs ? "\"" : "");
+    char const * const lhs_wrap = (lhs ? "\"" : "");
+    char const * const rhs_wrap = (rhs ? "\"" : "");
     if (!lhs) {
         lhs = "[null]";
     }
@@ -486,8 +549,8 @@ static inline void baro__assert_str(
         rhs = "[null]";
     }
 
-    const unsigned int str_len = strlen(lhs_str);
-    const unsigned int expanded_len = strlen(lhs) + strlen(lhs_wrap) * 2;
+    unsigned int const str_len = strlen(lhs_str);
+    unsigned int const expanded_len = strlen(lhs) + strlen(lhs_wrap) * 2;
 
     unsigned int str_padding = 0;
     unsigned int expanded_padding = 0;
@@ -553,7 +616,7 @@ static inline void baro__assert_str(
 // runtime initialization. This is used to automatically build a list of all
 // tests, across compilation units, for the test runner.
 #define BARO__CREATE_TEST_REGISTRAR(func_name, desc)                      \
-    static const struct baro__tag func_name##_tag = {desc, BARO__FILE, __LINE__}; \
+    static struct baro__tag const func_name##_tag = {desc, BARO__FILE, __LINE__}; \
     BARO__INITIALIZER(func_name##_registrar) {                            \
         baro__register_test(func_name, &func_name##_tag);                 \
     }
@@ -576,8 +639,8 @@ static inline void baro__assert_str(
 // should be executed (i.e. if we haven't exhausted all combinations including
 // it), while also updating the stack once we leave the subtest.
 #define BARO__SUBTEST_WRAPPER(desc, counter)                                                                                 \
-    static const struct baro__tag BARO__CONCAT(baro__subtest_tag_, counter) = {desc, __FILE__, __LINE__};                    \
-    const int BARO__CONCAT(baro__enter_subtest_, counter) = baro__check_subtest(&BARO__CONCAT(baro__subtest_tag_, counter)); \
+    static struct baro__tag const BARO__CONCAT(baro__subtest_tag_, counter) = {desc, BARO__FILE, __LINE__};                    \
+    int const BARO__CONCAT(baro__enter_subtest_, counter) = baro__check_subtest(&BARO__CONCAT(baro__subtest_tag_, counter)); \
     if (BARO__CONCAT(baro__enter_subtest_, counter)) goto BARO__CONCAT(baro__subtest_, counter);                             \
     while (BARO__CONCAT(baro__enter_subtest_, counter))                                                                      \
         if (1) {                                                                                                             \
@@ -591,77 +654,77 @@ static inline void baro__assert_str(
 
 #define BARO_SUBTEST(desc) BARO__SUBTEST_WRAPPER(desc, __COUNTER__)
 
-#define BARO__CHECK1(cond) baro__assert1(cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, "", __FILE__, __LINE__)
-#define BARO__CHECK2(cond, desc) baro__assert1(cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, desc, __FILE__, __LINE__)
+#define BARO__CHECK1(cond) baro__assert1(cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, "", BARO__FILE, __LINE__)
+#define BARO__CHECK2(cond, desc) baro__assert1(cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, desc, BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE1(cond) baro__assert1(cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE2(cond, desc) baro__assert1(cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, desc, __FILE__, __LINE__)
+#define BARO__REQUIRE1(cond) baro__assert1(cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE2(cond, desc) baro__assert1(cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, desc, BARO__FILE, __LINE__)
 
-#define BARO__CHECK_FALSE1(cond) baro__assert1(cond, #cond, BARO__EXPECTING_FALSE, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_FALSE2(cond, desc) baro__assert1(cond, #cond, BARO__EXPECTING_FALSE, 0, desc, __FILE__, __LINE__)
+#define BARO__CHECK_FALSE1(cond) baro__assert1(cond, #cond, BARO__EXPECTING_FALSE, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_FALSE2(cond, desc) baro__assert1(cond, #cond, BARO__EXPECTING_FALSE, 0, desc, BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_FALSE1(cond) baro__assert1(cond, #cond, BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_FALSE2(cond, desc) baro__assert1(cond, #cond, BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, desc, __FILE__, __LINE__)
+#define BARO__REQUIRE_FALSE1(cond) baro__assert1(cond, #cond, BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_FALSE2(cond, desc) baro__assert1(cond, #cond, BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, desc, BARO__FILE, __LINE__)
 
-#define BARO__CHECK_EQ1(lhs, rhs) baro__assert2(BARO__ASSERT_EQ, lhs, #lhs, rhs, #rhs, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_EQ2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_EQ, lhs, #lhs, rhs, #rhs, 0, desc, __FILE__, __LINE__)
+#define BARO__CHECK_EQ1(lhs, rhs) baro__assert2(BARO__ASSERT_EQ, lhs, #lhs, rhs, #rhs, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_EQ2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_EQ, lhs, #lhs, rhs, #rhs, 0, desc, BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_EQ1(lhs, rhs) baro__assert2(BARO__ASSERT_EQ, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_EQ2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_EQ, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, __FILE__, __LINE__)
+#define BARO__REQUIRE_EQ1(lhs, rhs) baro__assert2(BARO__ASSERT_EQ, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_EQ2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_EQ, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, BARO__FILE, __LINE__)
 
-#define BARO__CHECK_NE1(lhs, rhs) baro__assert2(BARO__ASSERT_NE, lhs, #lhs, rhs, #rhs, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_NE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_NE, lhs, #lhs, rhs, #rhs, 0, desc, __FILE__, __LINE__)
+#define BARO__CHECK_NE1(lhs, rhs) baro__assert2(BARO__ASSERT_NE, lhs, #lhs, rhs, #rhs, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_NE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_NE, lhs, #lhs, rhs, #rhs, 0, desc, BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_NE1(lhs, rhs) baro__assert2(BARO__ASSERT_NE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_NE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_NE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, __FILE__, __LINE__)
+#define BARO__REQUIRE_NE1(lhs, rhs) baro__assert2(BARO__ASSERT_NE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_NE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_NE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, BARO__FILE, __LINE__)
 
-#define BARO__CHECK_LT1(lhs, rhs) baro__assert2(BARO__ASSERT_LT, lhs, #lhs, rhs, #rhs, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_LT2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_LT, lhs, #lhs, rhs, #rhs, 0, desc, __FILE__, __LINE__)
+#define BARO__CHECK_LT1(lhs, rhs) baro__assert2(BARO__ASSERT_LT, lhs, #lhs, rhs, #rhs, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_LT2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_LT, lhs, #lhs, rhs, #rhs, 0, desc, BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_LT1(lhs, rhs) baro__assert2(BARO__ASSERT_LT, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_LT2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_LT, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, __FILE__, __LINE__)
+#define BARO__REQUIRE_LT1(lhs, rhs) baro__assert2(BARO__ASSERT_LT, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_LT2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_LT, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, BARO__FILE, __LINE__)
 
-#define BARO__CHECK_LE1(lhs, rhs) baro__assert2(BARO__ASSERT_LE, lhs, #lhs, rhs, #rhs, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_LE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_LE, lhs, #lhs, rhs, #rhs, 0, desc, __FILE__, __LINE__)
+#define BARO__CHECK_LE1(lhs, rhs) baro__assert2(BARO__ASSERT_LE, lhs, #lhs, rhs, #rhs, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_LE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_LE, lhs, #lhs, rhs, #rhs, 0, desc, BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_LE1(lhs, rhs) baro__assert2(BARO__ASSERT_LE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_LE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_LE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, __FILE__, __LINE__)
+#define BARO__REQUIRE_LE1(lhs, rhs) baro__assert2(BARO__ASSERT_LE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_LE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_LE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, BARO__FILE, __LINE__)
 
-#define BARO__CHECK_GT1(lhs, rhs) baro__assert2(BARO__ASSERT_GT, lhs, #lhs, rhs, #rhs, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_GT2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_GT, lhs, #lhs, rhs, #rhs, 0, desc, __FILE__, __LINE__)
+#define BARO__CHECK_GT1(lhs, rhs) baro__assert2(BARO__ASSERT_GT, lhs, #lhs, rhs, #rhs, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_GT2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_GT, lhs, #lhs, rhs, #rhs, 0, desc, BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_GT1(lhs, rhs) baro__assert2(BARO__ASSERT_GT, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_GT2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_GT, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, __FILE__, __LINE__)
+#define BARO__REQUIRE_GT1(lhs, rhs) baro__assert2(BARO__ASSERT_GT, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_GT2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_GT, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, BARO__FILE, __LINE__)
 
-#define BARO__CHECK_GE1(lhs, rhs) baro__assert2(BARO__ASSERT_GE, lhs, #lhs, rhs, #rhs, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_GE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_GE, lhs, #lhs, rhs, #rhs, 0, desc, __FILE__, __LINE__)
+#define BARO__CHECK_GE1(lhs, rhs) baro__assert2(BARO__ASSERT_GE, lhs, #lhs, rhs, #rhs, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_GE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_GE, lhs, #lhs, rhs, #rhs, 0, desc, BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_GE1(lhs, rhs) baro__assert2(BARO__ASSERT_GE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_GE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_GE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, __FILE__, __LINE__)
+#define BARO__REQUIRE_GE1(lhs, rhs) baro__assert2(BARO__ASSERT_GE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_GE2(lhs, rhs, desc) baro__assert2(BARO__ASSERT_GE, lhs, #lhs, rhs, #rhs, BARO__ASSERT_REQUIRE, desc, BARO__FILE, __LINE__)
 
-#define BARO__CHECK_STR_EQ2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_SENSITIVE, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_STR_EQ3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_SENSITIVE, 0, "", __FILE__, __LINE__)
+#define BARO__CHECK_STR_EQ2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_SENSITIVE, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_STR_EQ3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_SENSITIVE, 0, "", BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_STR_EQ2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_SENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_STR_EQ3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_SENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
+#define BARO__REQUIRE_STR_EQ2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_SENSITIVE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_STR_EQ3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_SENSITIVE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
 
-#define BARO__CHECK_STR_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_SENSITIVE, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_STR_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_SENSITIVE, 0, "", __FILE__, __LINE__)
+#define BARO__CHECK_STR_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_SENSITIVE, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_STR_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_SENSITIVE, 0, "", BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_STR_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_SENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_STR_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_SENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
+#define BARO__REQUIRE_STR_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_SENSITIVE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_STR_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_SENSITIVE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
 
-#define BARO__CHECK_STR_ICASE_EQ2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_INSENSITIVE, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_STR_ICASE_EQ3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_INSENSITIVE, 0, "", __FILE__, __LINE__)
+#define BARO__CHECK_STR_ICASE_EQ2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_INSENSITIVE, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_STR_ICASE_EQ3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_INSENSITIVE, 0, "", BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_STR_ICASE_EQ2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_STR_ICASE_EQ3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
+#define BARO__REQUIRE_STR_ICASE_EQ2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_STR_ICASE_EQ3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_TRUE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
 
-#define BARO__CHECK_STR_ICASE_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, 0, "", __FILE__, __LINE__)
-#define BARO__CHECK_STR_ICASE_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, 0, "", __FILE__, __LINE__)
+#define BARO__CHECK_STR_ICASE_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, 0, "", BARO__FILE, __LINE__)
+#define BARO__CHECK_STR_ICASE_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, 0, "", BARO__FILE, __LINE__)
 
-#define BARO__REQUIRE_STR_ICASE_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
-#define BARO__REQUIRE_STR_ICASE_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
+#define BARO__REQUIRE_STR_ICASE_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
+#define BARO__REQUIRE_STR_ICASE_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", BARO__FILE, __LINE__)
 
 #define BARO__GET2(_1, _2, NAME, ...) NAME
 #define BARO__GET3(_1, _2, _3, NAME, ...) NAME
@@ -800,7 +863,10 @@ BARO__X((__VA_ARGS__))
 char *optarg;
 
 // A small getopt-like function for parsing short CLI arguments
-int getopt(int num_args, char *const *args, char const *opts) {
+int getopt(
+        int const num_args,
+        char * const * args,
+        char const * opts) {
     static char *arg = "";
     static int cur_arg = 1;
 
@@ -855,7 +921,9 @@ int getopt(int num_args, char *const *args, char const *opts) {
 
 struct baro__context baro__c = {0};
 
-int main(int argc, char *argv[]) {
+int main(
+        int argc,
+        char *argv[]) {
     int show_passed_tests = 0;
     int suppress_output = 1;
     int stop_after_failure = 0;
@@ -896,7 +964,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    size_t num_tests = baro__c.tests.size;
+    size_t const num_tests = baro__c.tests.size;
     if (num_tests > 0 && (num_partitions < 1 || num_partitions > num_tests)) {
         fprintf(stderr, "Invalid number of partitions %zu, value should be"
                         "between 1 and %zu\n", num_partitions, num_tests);
@@ -909,15 +977,19 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
+    // Sort the list of tests so that we get a deterministic order of execution
+    // across different compilers and runtimes
+    baro__test_list_sort(&baro__c.tests);
+
     // Partition the tests if we are in a multiprocess workflow
-    size_t partition_size = (num_tests + (num_partitions - 1)) / num_partitions;
-    size_t first_test = partition_size * (cur_partition - 1);
+    size_t const partition_size = (num_tests + (num_partitions - 1)) / num_partitions;
+    size_t const first_test = partition_size * (cur_partition - 1);
     size_t last_test = first_test + partition_size;
     if (last_test >= num_tests) {
         last_test = num_tests;
     }
 
-    size_t num_tests_to_run = last_test - first_test;
+    size_t const num_tests_to_run = last_test - first_test;
     printf("Running %zu out of %zu test%s\n", num_tests_to_run, num_tests,
            num_tests > 1 ? "s" : "");
     if (num_partitions > 1) {
@@ -930,7 +1002,7 @@ int main(int argc, char *argv[]) {
 
     // Begin running tests serially
     for (size_t i = first_test; i < last_test; i++) {
-        struct baro__test *test = &baro__c.tests.tests[i];
+        struct baro__test const * const test = &baro__c.tests.tests[i];
         baro__c.current_test = test;
         baro__c.current_test_failed = 0;
         baro__hash_set_clear(&baro__c.passed_subtests);

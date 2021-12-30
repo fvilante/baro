@@ -198,7 +198,8 @@ multiple subtests will be executed once for every leaf node, meaning that
     }
     printf("\n");
 }</pre></td>
-<td><pre>begin
+<td><pre>
+begin
 1
 1.1
 
@@ -224,10 +225,9 @@ begin
 
 begin
 2
-2.4</pre></td>
+2.4
+</pre></td>
 </tr></tbody></table>
-
-
 
 ### Command-line arguments
 
