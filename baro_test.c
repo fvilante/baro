@@ -78,7 +78,7 @@ TEST("Tag list") {
 
   CHECK_FALSE(baro__tag_list_hash(&list));
 
-  struct baro__tag a = {.desc="desc",.file_name="file",.line_num=123};
+  struct baro__tag a = {.desc="desc",.file_path="file",.line_num=123};
   baro__tag_list_push(&list, &a);
 
   uint64_t hash_1 = baro__tag_list_hash(&list);
@@ -94,7 +94,7 @@ TEST("Tag list") {
   REQUIRE(baro__tag_list_pop(&list, &b));
 
   CHECK_STR_EQ(b.desc, "desc");
-  CHECK_STR_EQ(b.file_name, "file");
+  CHECK_STR_EQ(b.file_path, "file");
   CHECK_EQ(b.line_num, 123);
 
   CHECK_EQ(baro__tag_list_hash(&list), hash_1);

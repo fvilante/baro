@@ -21,7 +21,7 @@
 
 struct baro__tag {
     const char *desc;
-    const char *file_name;
+    const char *file_path;
     int line_num;
 };
 
@@ -242,10 +242,10 @@ static inline void baro__test_list_add(
 static int baro__test_list_sort_cmp(
         void const *lhs,
         void const *rhs) {
-    struct baro__test const *lhs_test = lhs;
-    struct baro__test const *rhs_test = rhs;
+    struct baro__test const * const lhs_test = lhs;
+    struct baro__test const * const rhs_test = rhs;
 
-    int const file_name_cmp = strcmp(lhs_test->tag->file_name, rhs_test->tag->file_name);
+    int const file_name_cmp = strcmp(lhs_test->tag->file_path, rhs_test->tag->file_path);
     if (file_name_cmp != 0) {
         return file_name_cmp;
     }
@@ -272,7 +272,11 @@ struct baro__context {
     size_t num_asserts;
     size_t num_asserts_failed;
 
+    // A stack that updates as we enter and exit subtests. This is mainly
+    // used to build "stack traces" for assertion failures.
     struct baro__tag_list subtest_stack;
+    // A set of all visited subtests in the current test, stored as 64-bit
+    // hashes of the terminating subtest stacks.
     struct baro__hash_set passed_subtests;
     size_t subtest_max_size;
     int should_reenter_subtest;
@@ -428,12 +432,12 @@ static inline void baro__assert_failed(
         enum baro__assert_type const type) {
     struct baro__test const * const test = baro__c.current_test;
     printf("  In: %s (%s:%d)\n",
-           test->tag->desc, extract_file_name(test->tag->file_name), test->tag->line_num);
+           test->tag->desc, extract_file_name(test->tag->file_path), test->tag->line_num);
 
     for (size_t i = 0; i < baro__c.subtest_stack.size; i++) {
-        const struct baro__tag *subtest_tag = baro__c.subtest_stack.tags[i];
+        struct baro__tag const * const subtest_tag = baro__c.subtest_stack.tags[i];
         printf("%*cUnder: %s (%s:%d)\n", (int) (i + 2) * 2, ' ',
-               subtest_tag->desc, extract_file_name(subtest_tag->file_name), subtest_tag->line_num);
+               subtest_tag->desc, extract_file_name(subtest_tag->file_path), subtest_tag->line_num);
     }
 
     if (baro__c.stdout_buffer[0]) {
@@ -457,7 +461,7 @@ static inline void baro__assert1(
         enum baro__expected_value const expected_value,
         enum baro__assert_type const type,
         char const * const desc,
-        char const * const file_name,
+        char const * const file_path,
         int const line_num) {
     baro__c.num_asserts++;
 
@@ -470,13 +474,12 @@ static inline void baro__assert1(
 
     baro__redirect_output(&baro__c, 0);
 
-    char const *assert_type = (type == BARO__ASSERT_REQUIRE ? "Require" : "Check");
-    char const *op_str = (expected_value == BARO__EXPECTING_TRUE ? "" : " false");
-    char const *op = (expected_value == BARO__EXPECTING_TRUE ? " != 0" : " == 0");
-    printf(BARO__RED "%s%s failed: %s\n" BARO__UNSET_COLOR, assert_type, op_str, desc);
+    char const * const assert_type = (type == BARO__ASSERT_REQUIRE ? "Require" : "Check");
+    char const * const op = (expected_value == BARO__EXPECTING_TRUE ? " != 0" : " == 0");
+    printf(BARO__RED "%s failed: %s\n" BARO__UNSET_COLOR, assert_type, desc);
     printf("    %s%s\n", value_str, op);
     printf("==> %zu%s\n", value, op);
-    printf("At %s:%d\n", extract_file_name(file_name), line_num);
+    printf("At %s:%d\n", extract_file_name(file_path), line_num);
 
     baro__assert_failed(type);
 }
@@ -489,7 +492,7 @@ static inline void baro__assert2(
         const char *rhs_str,
         enum baro__assert_type type,
         const char *desc,
-        const char *file_name,
+        const char *file_path,
         int line_num) {
     baro__c.num_asserts++;
 
@@ -507,7 +510,7 @@ static inline void baro__assert2(
 
     baro__redirect_output(&baro__c, 0);
 
-    char const *op =
+    char const * const op =
             cond == BARO__ASSERT_EQ ? "==" :
             cond == BARO__ASSERT_NE ? "!=" :
             cond == BARO__ASSERT_LT ? "<" :
@@ -519,7 +522,7 @@ static inline void baro__assert2(
     printf(BARO__RED "%s failed: %s\n" BARO__UNSET_COLOR, assert_type, desc);
     printf("    %s %s %s\n", lhs_str, op, rhs_str);
     printf("==> %zu %s %zu\n", lhs, op, rhs);
-    printf("At %s:%d\n", extract_file_name(file_name), line_num);
+    printf("At %s:%d\n", extract_file_name(file_path), line_num);
 
     baro__assert_failed(type);
 }
@@ -533,7 +536,7 @@ static inline void baro__assert_str(
         enum baro__case_sensitivity case_sensitivity,
         enum baro__assert_type type,
         char const *desc,
-        char const *file_name,
+        char const *file_path,
         int line_num) {
     baro__c.num_asserts++;
 
@@ -574,7 +577,7 @@ static inline void baro__assert_str(
     printf(BARO__RED "%s%s failed: %s\n" BARO__UNSET_COLOR, assert_type, sensitivity, desc);
     printf("    %s %*s%s %s\n", lhs_str, str_padding, "", op, rhs_str);
     printf("==> %s%s%s %*s%s %s%s%s\n", lhs_wrap, lhs, lhs_wrap, expanded_padding, "", op, rhs_wrap, rhs, rhs_wrap);
-    printf("At %s:%d\n", extract_file_name(file_name), line_num);
+    printf("At %s:%d\n", extract_file_name(file_path), line_num);
 
     baro__assert_failed(type);
 }
@@ -855,208 +858,4 @@ BARO__X((__VA_ARGS__))
 #define CHECK_STR_ICASE_NE BARO_CHECK_STR_ICASE_NE
 #define REQUIRE_STR_ICASE_NE BARO_REQUIRE_STR_ICASE_NE
 #endif//BARO_NO_SHORT
-
-#ifdef BARO_MAIN
-char *optarg;
-
-// A small getopt-like function for parsing short CLI arguments
-int getopt(
-        int const num_args,
-        char * const * args,
-        char const * opts) {
-    static char *arg = "";
-    static int cur_arg = 1;
-
-    if (!*arg) {
-        if (cur_arg >= num_args || *(arg = args[cur_arg]) != '-') {
-            arg = "";
-            return -1;
-        }
-        if (arg[1] && *++arg == '-') {
-            ++cur_arg;
-            arg = "";
-            fprintf(stderr, "Long options not supported\n");
-            return 0;
-        }
-    }
-
-    char opt;
-    char const *cur_opt;
-
-    if ((opt = *arg++) == ':' || !(cur_opt = strchr(opts, opt))) {
-        if (opt == '-') {
-            return -1;
-        }
-        if (!*arg) {
-            ++cur_arg;
-        }
-        fprintf(stderr, "Illegal option: %c\n", opt);
-        return 0;
-    }
-
-    if (*++cur_opt != ':') {
-        optarg = NULL;
-        if (!*arg) {
-            ++cur_arg;
-        }
-    } else {
-        if (*arg) {
-            optarg = arg;
-        } else if (num_args <= ++cur_arg) {
-            arg = "";
-            fprintf(stderr, "Option requires an argument: %c\n", opt);
-            return 0;
-        } else {
-            optarg = args[cur_arg];
-        }
-        arg = "";
-        ++cur_arg;
-    }
-
-    return opt;
-}
-
-struct baro__context baro__c = {0};
-
-int main(
-        int argc,
-        char *argv[]) {
-    int show_passed_tests = 0;
-    int suppress_output = 1;
-    int stop_after_failure = 0;
-    size_t num_partitions = 1;
-    size_t cur_partition = 1;
-
-    // Parse command line options
-    int c;
-    while ((c = getopt(argc, argv, "haosp:n:")) != -1) {
-        switch (c) {
-        case 'p':
-            num_partitions = strtol(optarg, NULL, 10);
-            break;
-
-        case 'n':
-            cur_partition = strtol(optarg, NULL, 10);
-            break;
-
-        case 'h':
-            printf("baro unit tests\n");
-            return 0;
-
-        case 'a':
-            show_passed_tests = 1;
-            break;
-
-        case 'o':
-            suppress_output = 0;
-            break;
-
-        case 's':
-            stop_after_failure = 1;
-            break;
-
-        default:
-            fprintf(stderr, "Unknown arguments: run with -h for help\n");
-            return -1;
-        }
-    }
-
-    size_t const num_tests = baro__c.tests.size;
-    if (num_tests > 0 && (num_partitions < 1 || num_partitions > num_tests)) {
-        fprintf(stderr, "Invalid number of partitions %zu, value should be"
-                        "between 1 and %zu\n", num_partitions, num_tests);
-        return -1;
-    }
-
-    if (cur_partition < 1 || cur_partition > num_partitions) {
-        fprintf(stderr, "Invalid current partition %zu, value should between 1"
-                        " and %zu inclusive\n", cur_partition, num_partitions);
-        return -1;
-    }
-
-    // Sort the list of tests so that we get a deterministic order of execution
-    // across different compilers and runtimes
-    baro__test_list_sort(&baro__c.tests);
-
-    // Partition the tests if we are in a multiprocess workflow
-    size_t const partition_size = (num_tests + (num_partitions - 1)) / num_partitions;
-    size_t const first_test = partition_size * (cur_partition - 1);
-    size_t last_test = first_test + partition_size;
-    if (last_test >= num_tests) {
-        last_test = num_tests;
-    }
-
-    size_t const num_tests_to_run = last_test - first_test;
-    printf("Running %zu out of %zu test%s\n", num_tests_to_run, num_tests,
-           num_tests > 1 ? "s" : "");
-    if (num_partitions > 1) {
-        printf("(Partition %zu: tests %zu to %zu)\n", cur_partition, first_test, last_test - 1);
-    }
-
-    printf(BARO__SEPARATOR);
-
-    baro__redirect_output(&baro__c, suppress_output);
-
-    // Begin running tests serially
-    for (size_t i = first_test; i < last_test; i++) {
-        struct baro__test const * const test = &baro__c.tests.tests[i];
-        baro__c.current_test = test;
-        baro__c.current_test_failed = 0;
-        baro__hash_set_clear(&baro__c.passed_subtests);
-
-        int run_test = 1;
-
-        // Recover from required assertion failures
-        if (setjmp(baro__c.env)) {
-            run_test = 0;
-        }
-
-        while (run_test) {
-            // Reset the current subtest stack
-            baro__c.should_reenter_subtest = 0;
-            baro__c.subtest_max_size = 0;
-            baro__tag_list_clear(&baro__c.subtest_stack);
-
-            test->func();
-
-            // Keep looping until all subtest permutations have been visited
-            if (!baro__c.should_reenter_subtest) {
-                run_test = 0;
-            }
-        }
-
-        baro__c.num_tests_ran++;
-        if (baro__c.current_test_failed) {
-            baro__c.num_tests_failed++;
-            if (stop_after_failure) {
-                break;
-            }
-        } else if (show_passed_tests) {
-            baro__redirect_output(&baro__c, 0);
-
-            printf(BARO__GREEN "Passed: %s (%s:%d)\n" BARO__UNSET_COLOR BARO__SEPARATOR,
-                   test->tag->desc, extract_file_name(test->tag->file_name), test->tag->line_num);
-            baro__redirect_output(&baro__c, suppress_output);
-        }
-
-        // Wipe the saved output between tests
-        memset(baro__c.stdout_buffer, 0, BARO__STDOUT_BUF_SIZE);
-    }
-
-    baro__redirect_output(&baro__c, 0);
-
-    printf("tests:   %5zu total | " BARO__GREEN "%5zu passed" BARO__UNSET_COLOR
-           " | " BARO__RED "%5zu failed" BARO__UNSET_COLOR "\n",
-           baro__c.num_tests_ran, baro__c.num_tests_ran - baro__c.num_tests_failed,
-           baro__c.num_tests_failed);
-
-    printf("asserts: %5zu total | " BARO__GREEN "%5zu passed" BARO__UNSET_COLOR
-           " | " BARO__RED "%5zu failed" BARO__UNSET_COLOR "\n",
-           baro__c.num_asserts, baro__c.num_asserts - baro__c.num_asserts_failed,
-           baro__c.num_asserts_failed);
-
-    return (int) baro__c.num_tests_failed;
-}
-
-#endif//BARO_MAIN
 #endif//BARO_3FDC036FA2C64C72A0DB6BA1033C678B
