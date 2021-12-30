@@ -23,6 +23,6 @@ foreach(test basic)
 
     add_test(
         NAME "check-example-${test}"
-        COMMAND ${CMAKE_COMMAND} -E compare_files "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt"
+        COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt"
     )
 endforeach()

@@ -1,6 +1,94 @@
-Running 1 out of 1 test
+Running 2 out of 2 tests
 ============================================================
-Passed: basic (basic.c:3)
+Require failed: 
+    0 != 0
+==> 0 != 0
+At basic.c:44
+  In: require (basic.c:41)
 ============================================================
-tests:       1 total |     1 passed |     0 failed
-asserts:     2 total |     2 passed |     0 failed
+Check failed: 
+    0 != 0
+==> 0 != 0
+At basic.c:5
+  In: basic (basic.c:3)
+============================================================
+Check false failed: 
+    1 == 0
+==> 1 == 0
+At basic.c:8
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    0 == 1
+==> 0 == 1
+At basic.c:11
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    1 == 0
+==> 1 == 0
+At basic.c:12
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    0 != 0
+==> 0 != 0
+At basic.c:15
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    1 != 1
+==> 1 != 1
+At basic.c:18
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    0 < 0
+==> 0 < 0
+At basic.c:20
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    1 < 0
+==> 1 < 0
+At basic.c:22
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    1 < 1
+==> 1 < 1
+At basic.c:23
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    1 <= 0
+==> 1 <= 0
+At basic.c:27
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    0 >= 1
+==> 0 >= 1
+At basic.c:31
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    0 > 0
+==> 0 > 0
+At basic.c:35
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    0 > 1
+==> 0 > 1
+At basic.c:36
+  In: basic (basic.c:3)
+============================================================
+Check failed: 
+    1 > 1
+==> 1 > 1
+At basic.c:38
+  In: basic (basic.c:3)
+============================================================
+tests:       2 total |     0 passed |     2 failed
+asserts:    30 total |    15 passed |    15 failed
