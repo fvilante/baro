@@ -7,6 +7,8 @@ enable_testing()
 
 add_executable(baro-test baro.c baro_test.c)
 target_compile_definitions(baro-test PRIVATE BARO_ENABLE BARO_SELF_TEST)
+target_compile_options(baro-test PRIVATE -fsanitize=address,undefined)
+target_link_options(baro-test PRIVATE -fsanitize=address,undefined)
 
 add_test(self-tests baro-test)
 
@@ -16,6 +18,8 @@ macro(AddExampleTest test flags)
         "examples/${test}.c" baro.c)
     target_compile_definitions("example-${test}" PRIVATE BARO_ENABLE)
     target_include_directories("example-${test}" PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_compile_options("example-${test}" PRIVATE -fsanitize=address,undefined)
+    target_link_options("example-${test}" PRIVATE -fsanitize=address,undefined)
 
     add_custom_command(
         TARGET "example-${test}"
