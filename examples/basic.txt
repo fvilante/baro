@@ -1,94 +1,118 @@
-Running 2 out of 2 tests
+Running 4 out of 4 tests
 ============================================================
-Require failed: 
-    0 != 0
-==> 0 != 0
-At basic.c:44
-  In: require (basic.c:41)
-============================================================
-Check failed: 
+Check failed:
     0 != 0
 ==> 0 != 0
 At basic.c:5
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     1 == 0
 ==> 1 == 0
 At basic.c:8
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     0 == 1
 ==> 0 == 1
 At basic.c:11
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     1 == 0
 ==> 1 == 0
 At basic.c:12
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     0 != 0
 ==> 0 != 0
 At basic.c:15
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     1 != 1
 ==> 1 != 1
 At basic.c:18
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     0 < 0
 ==> 0 < 0
 At basic.c:20
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     1 < 0
 ==> 1 < 0
 At basic.c:22
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     1 < 1
 ==> 1 < 1
 At basic.c:23
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     1 <= 0
 ==> 1 <= 0
 At basic.c:27
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     0 >= 1
 ==> 0 >= 1
 At basic.c:31
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     0 > 0
 ==> 0 > 0
 At basic.c:35
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     0 > 1
 ==> 0 > 1
 At basic.c:36
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-Check failed: 
+Check failed:
     1 > 1
 ==> 1 > 1
 At basic.c:38
-  In: basic (basic.c:3)
+  In: check fails soft (basic.c:3)
 ============================================================
-tests:       2 total |     0 passed |     2 failed
-asserts:    30 total |    15 passed |    15 failed
+Require failed:
+    0 != 0
+==> 0 != 0
+At basic.c:44
+  In: require fails hard (basic.c:41)
+============================================================
+Check failed:
+    "foo" != foo
+==> "foo" != "foo"
+At basic.c:52
+  In: string comparisons (basic.c:49)
+============================================================
+Check (case insensitive) failed:
+    "BAR" == foo_dup
+==> "BAR" == "foo"
+At basic.c:60
+  In: string comparisons (basic.c:49)
+============================================================
+Check failed: displays message on check failure
+    0 != 0
+==> 0 != 0
+At basic.c:66
+  In: fail with message (basic.c:65)
+============================================================
+Require failed: displays message on require failure
+    0 != 0
+==> 0 != 0
+At basic.c:70
+  In: fail with message (basic.c:65)
+============================================================
+tests:       4 total |     0 passed |     4 failed
+asserts:    41 total |    22 passed |    19 failed
