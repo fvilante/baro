@@ -38,18 +38,28 @@ macro(AddExampleTest test flags)
         POST_BUILD
         COMMAND "example_${test}" "${flags}" > "${test}.txt" || (exit 0))
 
-    find_program(DIFF diff)
-    if(DIFF)
-        add_test(
-                NAME "check_example_${test}"
-                COMMAND diff -c --strip-trailing-cr "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
-    else()
-        add_test(
-                NAME "check_example_${test}"
-                COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+    # Allow tests to be excluded from the CTest suite
+    set (extra_args ${ARGN})
+    list(LENGTH extra_args extra_count)
+    if (${extra_count} GREATER 0)
+        list(GET extra_args 0 optional_arg)
+    endif ()
+    if(NOT optional_arg STREQUAL "skip")
+        find_program(DIFF diff)
+        if(DIFF)
+            add_test(
+                    NAME "check_example_${test}"
+                    COMMAND diff -c --strip-trailing-cr "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+        else()
+            add_test(
+                    NAME "check_example_${test}"
+                    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+        endif()
     endif()
 endmacro()
 
 AddExampleTest(basic -a)
 AddExampleTest(subtests -ao)
 AddExampleTest(unicode_encoding -a)
+# Exclude this test from the suite because it is expensive
+AddExampleTest(stress_tests "" skip)
