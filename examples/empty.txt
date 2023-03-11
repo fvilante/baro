@@ -1,0 +1,1 @@
+Zero test cases were found! This usually means that something went wrong with test registration.

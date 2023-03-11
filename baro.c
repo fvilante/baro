@@ -104,6 +104,12 @@ int main(
         }
     }
 
+    if (baro__c.tests.size == 0) {
+        fprintf(stderr, "Zero test cases were found! This usually means that "
+                        "something went wrong with test registration.\n");
+        return -1;
+    }
+
     size_t const num_tests = baro__c.tests.size;
     if (num_tests > 0 && (num_partitions < 1 || num_partitions > num_tests)) {
         fprintf(stderr, "Invalid number of partitions %zu, value should be"

@@ -18,7 +18,15 @@ endif()
 
 add_test(self_tests baro_test)
 
-macro(AddExampleTest test flags)
+macro(AddExampleTest test)
+    # Parse optional arguments
+    set (extra_args ${ARGN})
+    list(LENGTH extra_args extra_count)
+    if (${extra_count} GREATER 0)
+        # Command line arguments
+        list(GET extra_args 0 flags)
+    endif()
+
     add_executable(
         "example_${test}"
         "examples/${test}.c" baro.c)
@@ -36,15 +44,8 @@ macro(AddExampleTest test flags)
     add_custom_command(
         TARGET "example_${test}"
         POST_BUILD
-        COMMAND "example_${test}" "${flags}" > "${test}.txt" || (exit 0))
+        COMMAND "example_${test}" "${flags}" > "${test}.txt" 2>&1 || (exit 0))
 
-    # Allow tests to be excluded from the CTest suite
-    set (extra_args ${ARGN})
-    list(LENGTH extra_args extra_count)
-    if (${extra_count} GREATER 0)
-        list(GET extra_args 0 optional_arg)
-    endif ()
-    if(NOT optional_arg STREQUAL "skip")
         find_program(DIFF diff)
         if(DIFF)
             add_test(
@@ -55,11 +56,12 @@ macro(AddExampleTest test flags)
                     NAME "check_example_${test}"
                     COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
         endif()
-    endif()
+
 endmacro()
 
 AddExampleTest(basic -a)
 AddExampleTest(subtests -ao)
 AddExampleTest(unicode_encoding -a)
-# Exclude this test from the suite because it is expensive
-AddExampleTest(stress_tests "" skip)
+# Excluded from the suite because it's so expensive
+#AddExampleTest(stress_tests)
+AddExampleTest(empty)
