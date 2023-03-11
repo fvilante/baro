@@ -5,31 +5,51 @@ set(CMAKE_C_STANDARD 99)
 
 enable_testing()
 
-add_executable(baro-test baro.c baro_test.c)
-target_compile_definitions(baro-test PRIVATE BARO_ENABLE BARO_SELF_TEST)
-target_compile_options(baro-test PRIVATE -fsanitize=address,undefined)
-target_link_options(baro-test PRIVATE -fsanitize=address,undefined)
+add_executable(baro_test baro.c baro_test.c)
+target_compile_definitions(baro_test PRIVATE BARO_ENABLE BARO_SELF_TEST)
+if(MSVC)
+    # TODO remove static linking once ASan is in the PATH
+    target_compile_options(baro_test PRIVATE /MTd /fsanitize=address)
+    target_link_options(baro_test PRIVATE /fsanitize=address)
+else()
+    target_compile_options(baro_test PRIVATE -fsanitize=address,undefined)
+    target_link_options(baro_test PRIVATE -fsanitize=address,undefined)
+endif()
 
-add_test(self-tests baro-test)
+add_test(self_tests baro_test)
 
 macro(AddExampleTest test flags)
     add_executable(
-        "example-${test}"
+        "example_${test}"
         "examples/${test}.c" baro.c)
-    target_compile_definitions("example-${test}" PRIVATE BARO_ENABLE)
-    target_include_directories("example-${test}" PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    target_compile_options("example-${test}" PRIVATE -fsanitize=address,undefined)
-    target_link_options("example-${test}" PRIVATE -fsanitize=address,undefined)
+    target_compile_definitions("example_${test}" PRIVATE BARO_ENABLE)
+    target_include_directories("example_${test}" PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    if(MSVC)
+        # TODO remove static linking once ASan is in the PATH
+        target_compile_options("example_${test}" PRIVATE /MTd /fsanitize=address)
+        target_link_options("example_${test}" PRIVATE /fsanitize=address)
+    else()
+        target_compile_options("example_${test}" PRIVATE -fsanitize=address,undefined)
+        target_link_options("example_${test}" PRIVATE -fsanitize=address,undefined)
+    endif()
 
     add_custom_command(
-        TARGET "example-${test}"
+        TARGET "example_${test}"
         POST_BUILD
-        COMMAND "example-${test}" "${flags}" > "${test}.txt" || (exit 0))
+        COMMAND "example_${test}" "${flags}" > "${test}.txt" || (exit 0))
 
-    add_test(
-        NAME "check-example-${test}"
-        COMMAND diff -c --strip-trailing-cr "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+    find_program(DIFF diff)
+    if(DIFF)
+        add_test(
+                NAME "check_example_${test}"
+                COMMAND diff -c --strip-trailing-cr "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+    else()
+        add_test(
+                NAME "check_example_${test}"
+                COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+    endif()
 endmacro()
 
 AddExampleTest(basic -a)
 AddExampleTest(subtests -ao)
+AddExampleTest(unicode_encoding -a)
