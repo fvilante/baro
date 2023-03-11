@@ -13,54 +13,67 @@ A C99 unit testing framework that is:
 1. Include `baro.h` in your source files and start writing tests:
     ```c
     #include <baro.h>
-    
-    magic_t *magic_create(void) { /* ... */ }
-    
-    void magic_destroy(magic_t *magic) { /* ... */ }
-    
-    int magic_frombobulate(magic_t *magic, elixir_t *elixir) { /* ... */ }
-    
-    // Write tests directly after function definitions, or where
-    // ever you want, really
-    TEST("[magic] frombobulation") {
-        magic_t *magic = magic_create();
-      
-        // Subtests allow you to write several independent test cases; this
-        // is very useful for testing anything with common setup & teardown
-        SUBTEST("with elixir") {
-            elixir_t *panacea = elixir_create_panacea();
-              
-            // Require will assert that the returned value is greater than or equal
-            // to 100, and fail the (sub)test if not
-            REQUIRE_GE(magic_frombobulate(magic, panacea), 100);
-            
-            SUBTEST("weaker on the second application") {
-                // Check is less strict that require and will let the test case
-                // continue, despite being marked as failing
-                CHECK_LT(magic_frombobulate(magic, panacea), 50);
+
+    // Write your methods like usual:
+
+    unsigned long utf8_decode(char **s) { /* ... */ }
+
+    size_t utf8_encode(unsigned long code_point, char **buf, size_t len) { /* ... */ }
+
+    // Then, write your tests in the same file (or wherever, really):
+
+    TEST("[encoding] UTF-8 <-> UTF-32") {
+        // Perform some setup that will be executed for each subtest
+        struct test_case {
+            char const *utf8;
+            uint32_t utf32[];
+        } const
+            ascii = {"abCD12!@", {'a', 'b', 'C', 'D', '1', '2', '!', '@', 0}},
+            greek = {"κόσμε", {954, 972, 963, 956, 949, 0}},
+            emoji = {"\xF0\x9F\x98\x8E\xF0\x9F\x98\xB8", {128526, 128568, 0}},
+            *test_cases[] = {
+                &ascii, &greek, &emoji,
+            };
+   
+        size_t const num_test_cases = sizeof(test_cases)/sizeof(struct test_case);
+
+        // Require that the two values are equal, failing with a message if not.
+        REQUIRE_EQ(num_test_cases, 3, "unexpected number of test cases");
+
+        // Branch out into a subtest
+        SUBTEST("encode UTF-32 to UTF-8") {
+            for (size_t i = 0; i < num_test_cases; i++) {
+                char *str = (char *)test_cases[i]->utf8;
+
+                char buf[512] = {0};
+                char *p = buf;
+                size_t len = 512;
+                for (size_t j = 0; test_cases[i]->utf32[j]; j++) {
+                    len -= utf8_encode(test_cases[i]->utf32[j], &p, len);
+                }
+
+                // Check that the two strings are equal. Unlike REQUIRE, CHECK
+                // statements will continue the test case after encountering a
+                // failure.
+                CHECK_STR_EQ(buf, str);
             }
         }
+
+        // Branch out into another subtest that can be executed independently
+        SUBTEST("decode UTF-8 to UTF-32") {
+            for (size_t i = 0; i < sizeof(test_cases)/sizeof(struct test_case); i++) {
+                char *str = (char *)test_cases[i]->utf8;
         
-        magic_destroy(magic);
-    }
-    
-    char *magic_name(magic_t const *magic) { /* ... */ }
-    
-    TEST("[magic] name") {
-        magic_t *magic = magic_create();
-        
-        REQUIRE_STR_ICASE_EQ(magic_name(magic), "default");
-        
-        SUBTEST("after frombobulating") {
-            elixir_t *mana = elixir_create_mana();
-            
-            REQUIRE_EQ(magic_frombobulate(magic, mana), 12, "frombobulate must be 12");
-            CHECK_STR_ICASE_EQ(magic_name(magic), "strong");
+                for (size_t j = 0; test_cases[i]->utf32[j]; j++) {
+                    CHECK_EQ(utf8_decode(&str), test_cases[i]->utf32[j]);
+                }
+                CHECK_EQ(utf8_decode(&str), 0);
+            }
         }
-        
-        magic_destroy(magic);
-    }}
+    }
     ```
+
+   - See the `examples/` directory for common usage patterns.
 
 2. Create a new build target with all the same source files, except the file
    containing the `main` function. Instead, use the provided `baro.c`.
@@ -75,7 +88,8 @@ A C99 unit testing framework that is:
      ```
 
 3. Define `BARO_ENABLED` for this new build target only (and _not_ for any 
-   non-test targets).
+   non-test targets). This allows the test code to be optimized away in
+   non-test builds.
    - With `gcc`/`clang`, pass `-DBARO_ENABLE`:
      ```plain
      gcc source.c baro.c -o tests -DBARO_ENABLE
@@ -86,7 +100,7 @@ A C99 unit testing framework that is:
      target_compile_definitions(tests PRIVATE BARO_ENABLE)
      ```
 
-5. Build and run the new build target:
+4. Build and run the new build target:
     ```plain
     > ./tests
     Running 10 out of 10 tests
@@ -228,6 +242,9 @@ begin
 2.4
 </pre></td>
 </tr></tbody></table>
+
+Hard failures (with `REQUIRE`) in a subtest will bubble-up and fail the entire
+test case.
 
 ### Command-line arguments
 
