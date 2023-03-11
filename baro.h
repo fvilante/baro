@@ -600,11 +600,10 @@ static inline void baro__assert_str(
 // C++ initializers (and after C initializers), while the `U` puts it after any
 // MSVC-generated initializers, like for globals. See the CRT's `defects.inc`
 // for "documentation" of this behavior.
+#pragma section(".CRT$XCU", read)
 #define BARO__INITIALIZER(f)                                                   \
     static void f(void);                                                       \
-    __pragma(data_seg(".CRT$XCU"))                                             \
     __declspec(allocate(".CRT$XCU")) static void (* const f##_init)(void) = f; \
-    __pragma(data_seg())                                                       \
     static void f(void)
 #else
 #define BARO__INITIALIZER(f) \
