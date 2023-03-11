@@ -155,7 +155,6 @@ int main(
         }
 
         while (run_test) {
-
             // Reset the current subtest stack
             baro__c.should_reenter_subtest = 0;
             baro__c.subtest_max_size = 0;

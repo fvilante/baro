@@ -45,7 +45,7 @@ TEST("[encoding] UTF-8 <-> UTF-32") {
     // Perform some setup that will be executed for each subtest
     struct test_case {
         char const *utf8;
-        uint32_t utf32[];
+        uint32_t utf32[32];
     } const
             ascii = {"abCD12!@", {'a', 'b', 'C', 'D', '1', '2', '!', '@', 0}},
             greek = {"κόσμε", {954, 972, 963, 956, 949, 0}},
@@ -54,7 +54,7 @@ TEST("[encoding] UTF-8 <-> UTF-32") {
             &ascii, &greek, &emoji,
     };
 
-    size_t const num_test_cases = sizeof(test_cases)/sizeof(struct test_case);
+    size_t const num_test_cases = sizeof(test_cases)/sizeof(struct test_case *);
 
     // Require that the two values are equal, failing with a message if not.
     REQUIRE_EQ(num_test_cases, 3, "unexpected number of test cases");
@@ -80,7 +80,7 @@ TEST("[encoding] UTF-8 <-> UTF-32") {
 
     // Branch out into another subtest that can be executed independently
     SUBTEST("decode UTF-8 to UTF-32") {
-            for (size_t i = 0; i < sizeof(test_cases)/sizeof(struct test_case); i++) {
+            for (size_t i = 0; i < num_test_cases; i++) {
                 char *str = (char *)test_cases[i]->utf8;
 
                 for (size_t j = 0; test_cases[i]->utf32[j]; j++) {
