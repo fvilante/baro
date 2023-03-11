@@ -69,3 +69,10 @@ TEST("fail with message") {
     REQUIRE(1, "doesn't display message on require pass");
     REQUIRE(0, "displays message on require failure");
 }
+
+TEST("string comparisons with messages") {
+    CHECK_STR_EQ("foo", "bar", "message");
+    CHECK_STR_NE("foo", "foo", "message");
+    CHECK_STR_ICASE_EQ("foo", "bar", "message");
+    CHECK_STR_ICASE_NE("foo", "foo", "message");
+}

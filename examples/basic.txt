@@ -1,4 +1,4 @@
-Running 4 out of 4 tests
+Running 5 out of 5 tests
 ============================================================
 Check failed:
     0 != 0
@@ -114,5 +114,29 @@ Require failed: displays message on require failure
 At basic.c:70
   In: fail with message (basic.c:65)
 ============================================================
-tests:       4 total |     0 passed |     4 failed
-asserts:    41 total |    22 passed |    19 failed
+Check failed: message
+    "foo" == "bar"
+==> "foo" == "bar"
+At basic.c:74
+  In: string comparisons with messages (basic.c:73)
+============================================================
+Check failed: message
+    "foo" != "foo"
+==> "foo" != "foo"
+At basic.c:75
+  In: string comparisons with messages (basic.c:73)
+============================================================
+Check (case insensitive) failed: message
+    "foo" == "bar"
+==> "foo" == "bar"
+At basic.c:76
+  In: string comparisons with messages (basic.c:73)
+============================================================
+Check (case insensitive) failed: message
+    "foo" != "foo"
+==> "foo" != "foo"
+At basic.c:77
+  In: string comparisons with messages (basic.c:73)
+============================================================
+tests:       5 total |     0 passed |     5 failed
+asserts:    45 total |    22 passed |    23 failed

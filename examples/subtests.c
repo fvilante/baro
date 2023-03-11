@@ -1,6 +1,6 @@
 #include <baro.h>
 
-TEST("i like subtests") {
+TEST("subtest stack behavior") {
     printf("begin\n");
     SUBTEST("1") {
         printf("1\n");
@@ -33,4 +33,17 @@ TEST("i like subtests") {
         }
     }
     printf("\n");
+}
+
+TEST("subtest failures bubble up") {
+    SUBTEST("a") {
+        REQUIRE(1);
+    }
+    SUBTEST("b") {
+        REQUIRE(0); // should fail
+    }
+    // will not be executed
+    SUBTEST("c") {
+        REQUIRE(0);
+    }
 }

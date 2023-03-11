@@ -1,4 +1,4 @@
-Running 1 out of 1 test
+Running 2 out of 2 tests
 ============================================================
 begin
 1
@@ -28,7 +28,14 @@ begin
 2
 2.4
 
-Passed: i like subtests (subtests.c:3)
+Passed: subtest stack behavior (subtests.c:3)
 ============================================================
-tests:       1 total |     1 passed |     0 failed
-asserts:     0 total |     0 passed |     0 failed
+Require failed:
+    0 != 0
+==> 0 != 0
+At subtests.c:43
+  In: subtest failures bubble up (subtests.c:38)
+    Under: b (subtests.c:42)
+============================================================
+tests:       2 total |     1 passed |     1 failed
+asserts:     2 total |     1 passed |     1 failed
