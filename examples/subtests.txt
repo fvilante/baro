@@ -1,4 +1,4 @@
-Running 2 out of 2 tests
+Running 3 out of 3 tests
 ============================================================
 begin
 1
@@ -37,5 +37,49 @@ At subtests.c:43
   In: subtest failures bubble up (subtests.c:38)
     Under: b (subtests.c:42)
 ============================================================
-tests:       2 total |     1 passed |     1 failed
-asserts:     2 total |     1 passed |     1 failed
+Check failed: 1
+    0 != 0
+==> 0 != 0
+At subtests.c:52
+  In: subtests with identical descriptions + on the same line behave correctly (subtests.c:51)
+    Under:  (subtests.c:52)
+============================================================
+Check failed: 2
+    0 != 0
+==> 0 != 0
+At subtests.c:52
+  In: subtests with identical descriptions + on the same line behave correctly (subtests.c:51)
+    Under:  (subtests.c:52)
+============================================================
+Check failed: 3
+    0 != 0
+==> 0 != 0
+At subtests.c:52
+  In: subtests with identical descriptions + on the same line behave correctly (subtests.c:51)
+    Under:  (subtests.c:52)
+      Under:  (subtests.c:52)
+============================================================
+Check failed: 2
+    0 != 0
+==> 0 != 0
+At subtests.c:52
+  In: subtests with identical descriptions + on the same line behave correctly (subtests.c:51)
+    Under:  (subtests.c:52)
+============================================================
+Check failed: 4
+    0 != 0
+==> 0 != 0
+At subtests.c:52
+  In: subtests with identical descriptions + on the same line behave correctly (subtests.c:51)
+    Under:  (subtests.c:52)
+      Under:  (subtests.c:52)
+============================================================
+Check failed: 5
+    0 != 0
+==> 0 != 0
+At subtests.c:52
+  In: subtests with identical descriptions + on the same line behave correctly (subtests.c:51)
+    Under:  (subtests.c:52)
+============================================================
+tests:       3 total |     1 passed |     2 failed
+asserts:     8 total |     1 passed |     7 failed

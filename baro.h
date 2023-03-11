@@ -88,7 +88,17 @@ static inline uint64_t baro__tag_list_hash(
     uint64_t hash = 0;
 
     // Use the address of each item in the list as build a hash, as we only
-    // expect tags to be statically allocated
+    // expect tags to be statically allocated. The C99 standard guarantees that
+    // two named objects of the same type will not have the same memory
+    // location (6.5.9/6):
+    //
+    // > Two pointers compare equal if and only if both are null pointers,
+    // > both are pointers to the same object (including a pointer to an object
+    // > and a subobject at its beginning) or function, both are pointers to
+    // > one past the last element of the same array object, or one is a pointer
+    // > to one past the end of one array object and the other is a pointer to
+    // > the start of a different array object that happens to immediately
+    // > follow the first array object in the address space.
     for (size_t i = 0; i < list->size; i++) {
         // Adapted from MurmurHash3's avalanche mixer
         uint64_t a = (uint64_t) list->tags[i] + i;

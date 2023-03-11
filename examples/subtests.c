@@ -47,3 +47,7 @@ TEST("subtest failures bubble up") {
         REQUIRE(0);
     }
 }
+
+TEST("subtests with identical descriptions + on the same line behave correctly") {
+    SUBTEST("") { CHECK(0, "1"); } SUBTEST("") { CHECK(0, "2"); SUBTEST("") { CHECK(0, "3"); } SUBTEST("") { CHECK(0, "4"); } } SUBTEST("") { CHECK(0, "5"); }
+}
