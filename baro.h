@@ -563,11 +563,11 @@ static inline void baro__assert_str(
         rhs = "[null]";
     }
 
-    unsigned int const str_len = strlen(lhs_str);
-    unsigned int const expanded_len = strlen(lhs) + strlen(lhs_wrap) * 2;
+    size_t const str_len = strlen(lhs_str);
+    size_t const expanded_len = strlen(lhs) + strlen(lhs_wrap) * 2;
 
-    unsigned int str_padding = 0;
-    unsigned int expanded_padding = 0;
+    size_t str_padding = 0;
+    size_t expanded_padding = 0;
     if (str_len > expanded_len) {
         expanded_padding = str_len - expanded_len;
     } else if (expanded_len > str_len) {
@@ -575,8 +575,8 @@ static inline void baro__assert_str(
     }
 
     printf(BARO__RED "%s%s failed:%s\n" BARO__UNSET_COLOR, assert_type, sensitivity, desc);
-    printf("    %s %*s%s %s\n", lhs_str, str_padding, "", op, rhs_str);
-    printf("==> %s%s%s %*s%s %s%s%s\n", lhs_wrap, lhs, lhs_wrap, expanded_padding, "", op, rhs_wrap, rhs, rhs_wrap);
+    printf("    %s %*s%s %s\n", lhs_str, (int)str_padding, "", op, rhs_str);
+    printf("==> %s%s%s %*s%s %s%s%s\n", lhs_wrap, lhs, lhs_wrap, (int)expanded_padding, "", op, rhs_wrap, rhs, rhs_wrap);
     printf("At %s:%d\n", extract_file_name(file_path), line_num);
 
     baro__assert_failed(type);
