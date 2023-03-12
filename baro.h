@@ -225,11 +225,6 @@ static inline void baro__test_list_create(
     list->capacity = capacity;
 }
 
-static inline size_t baro__test_list_size(
-        struct baro__test_list * const list) {
-    return list->size;
-}
-
 static inline void baro__test_list_add(
         struct baro__test_list * const list,
         struct baro__test const * const test) {
@@ -364,7 +359,7 @@ static inline void baro__redirect_output(
 static inline void baro__register_test(
         void (* const test_func)(void),
         struct baro__tag const * const tag) {
-    if (baro__test_list_size(&baro__c.tests) == 0) {
+    if (baro__c.tests.size == 0) {
         baro__context_create(&baro__c);
     }
 

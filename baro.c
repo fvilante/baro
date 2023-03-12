@@ -69,10 +69,13 @@ int main(
     int stop_after_failure = 0;
     size_t num_partitions = 1;
     size_t cur_partition = 1;
+    char *raw_tag_filters = NULL;
+
+    size_t const total_num_tests = baro__c.tests.size;
 
     // Parse command line options
     int c;
-    while ((c = getopt(argc, argv, "haosp:n:")) != -1) {
+    while ((c = getopt(argc, argv, "haosp:n:t:")) != -1) {
         switch (c) {
         case 'p':
             num_partitions = strtol(optarg, NULL, 10);
@@ -81,10 +84,6 @@ int main(
         case 'n':
             cur_partition = strtol(optarg, NULL, 10);
             break;
-
-        case 'h':
-            printf("baro unit tests\n");
-            return 0;
 
         case 'a':
             show_passed_tests = 1;
@@ -98,19 +97,87 @@ int main(
             stop_after_failure = 1;
             break;
 
+        case 't':
+            raw_tag_filters = strdup(optarg);
+            break;
+
+        case 'h':
+            printf("Unit test suite, powered by baro; %zu tests loaded\n"
+                   "Usage: %s [options]\n"
+                   "Options:\n"
+                   "  -a                   Show all tests, even passing ones\n"
+                   "  -o                   Show all standard output, including passed tests\n"
+                   "  -s                   Stop running after the first failure\n"
+                   "  -t <tag1,tag2,...>   Only run tests with one of these [tags]\n"
+                   "  -p <num_partitions>  Total number of partitions, 1-based\n"
+                   "  -n <cur_partition>   Current partition index, 1-based\n"
+                   "  -h                   Show this help text\n",
+                   total_num_tests, argv[0]);
+            return 0;
+
         default:
             fprintf(stderr, "Unknown arguments: run with -h for help\n");
             return -1;
         }
     }
 
-    if (baro__c.tests.size == 0) {
+    if (total_num_tests == 0) {
         fprintf(stderr, "Zero test cases were found! This usually means that "
                         "something went wrong with test registration.\n");
         return -1;
     }
 
-    size_t const num_tests = baro__c.tests.size;
+    // Filter out tests
+    struct baro__test_list tests;
+    if (raw_tag_filters != NULL && raw_tag_filters[0] != '\0') {
+        baro__test_list_create(&tests,baro__c.tests.size);
+
+        // Parse the filter list
+        size_t num_filters = 1;
+        char *p = raw_tag_filters;
+        while (*p) {
+            if (*p++ == ',') {
+                num_filters++;
+            }
+        }
+
+        char **filters = malloc(num_filters * sizeof(char *));
+        p = strtok(raw_tag_filters, ",");
+        for (size_t i = 0; i < num_filters && p; i++) {
+            // Skip whitespace
+            while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') {
+                p++;
+            }
+
+            size_t const filter_len = strlen(p);
+            if (filter_len == 0) {
+                fprintf(stderr, "Invalid filter list\n");
+                return -1;
+            }
+
+            filters[i] = malloc(filter_len + 2 + 1);
+            snprintf(filters[i], filter_len + 2 + 1, "[%s]", p);
+
+            p = strtok(NULL, ",");
+        }
+
+        // Copy over tests that match the filters
+        for (size_t i = 0; i < total_num_tests; i++) {
+            struct baro__test const *test = &baro__c.tests.tests[i];
+
+            for (size_t j = 0; j < num_filters; j++) {
+                char const *filter = filters[j];
+                if (strstr(test->tag->desc, filter) != NULL) {
+                    baro__test_list_add(&tests, test);
+                    break;
+                }
+            }
+        }
+    } else {
+        memcpy(&tests, &baro__c.tests, sizeof(baro__c.tests));
+    }
+
+    size_t const num_tests = tests.size;
     if (num_tests > 0 && (num_partitions < 1 || num_partitions > num_tests)) {
         fprintf(stderr, "Invalid number of partitions %zu, value should be"
                         "between 1 and %zu\n", num_partitions, num_tests);
@@ -125,7 +192,7 @@ int main(
 
     // Sort the list of tests so that we get a deterministic order of execution
     // across different compilers and runtimes
-    baro__test_list_sort(&baro__c.tests);
+    baro__test_list_sort(&tests);
 
     // Partition the tests if we are in a multiprocess workflow
     size_t const partition_size = (num_tests + (num_partitions - 1)) / num_partitions;
@@ -136,8 +203,8 @@ int main(
     }
 
     size_t const num_tests_to_run = last_test - first_test;
-    printf("Running %zu out of %zu test%s\n", num_tests_to_run, num_tests,
-           num_tests > 1 ? "s" : "");
+    printf("Running %zu out of %zu test%s (of %zu total)\n", num_tests_to_run, num_tests,
+           num_tests > 1 ? "s" : "", total_num_tests);
     if (num_partitions > 1) {
         printf("(Partition %zu: tests %zu to %zu)\n", cur_partition, first_test, last_test - 1);
     }
@@ -148,7 +215,7 @@ int main(
 
     // Begin running tests serially
     for (size_t i = first_test; i < last_test; i++) {
-        struct baro__test const * const test = &baro__c.tests.tests[i];
+        struct baro__test const * const test = &tests.tests[i];
         baro__c.current_test = test;
         baro__c.current_test_failed = 0;
         baro__hash_set_clear(&baro__c.passed_subtests);

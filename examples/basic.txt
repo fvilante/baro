@@ -1,4 +1,4 @@
-Running 5 out of 5 tests
+Running 5 out of 5 tests (of 5 total)
 ============================================================
 Check failed:
     0 != 0

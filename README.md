@@ -255,6 +255,8 @@ The test runner accepts a few arguments:
   - By default, only the last 4096 characters of standard output will be
     shown only for failing tests
 - `-s` will cause the test suite to **s**top after the first failure
+- `-t tag1,tag2` will only execute tests with descriptions containing either
+  `[tag1]` or `[tag2]`
 
 #### Partitioning
 

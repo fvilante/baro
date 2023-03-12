@@ -1,4 +1,4 @@
-Running 2 out of 2 tests
+Running 2 out of 2 tests (of 2 total)
 ============================================================
 Require failed:
     0 != 0

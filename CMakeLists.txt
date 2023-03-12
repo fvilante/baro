@@ -64,4 +64,5 @@ AddExampleTest(subtests -ao)
 AddExampleTest(unicode_encoding -a)
 # Excluded from the suite because it's so expensive
 #AddExampleTest(stress_tests)
-AddExampleTest(empty)
+AddExampleTest(empty "")
+AddExampleTest(tag_filtering "-t foo,bar")

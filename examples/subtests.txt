@@ -1,4 +1,4 @@
-Running 3 out of 3 tests
+Running 3 out of 3 tests (of 3 total)
 ============================================================
 begin
 1
