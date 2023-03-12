@@ -143,7 +143,12 @@ int main(
 
         char **filters = malloc(num_filters * sizeof(char *));
         p = strtok(raw_tag_filters, ",");
-        for (size_t i = 0; i < num_filters && p; i++) {
+        for (size_t i = 0; i < num_filters; i++) {
+            if (p == NULL) {
+                filters[i] = NULL;
+                continue;
+            }
+
             // Skip whitespace
             while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') {
                 p++;
@@ -167,12 +172,23 @@ int main(
 
             for (size_t j = 0; j < num_filters; j++) {
                 char const *filter = filters[j];
-                if (strstr(test->tag->desc, filter) != NULL) {
+                if (filter != NULL && strstr(test->tag->desc, filter) != NULL) {
                     baro__test_list_add(&tests, test);
                     break;
                 }
             }
         }
+
+        // Clean up
+        for (size_t i = 0; i < num_filters; i++) {
+            if (filters[i] != NULL) {
+                free(filters[i]);
+            }
+        }
+        free(filters);
+
+        free(raw_tag_filters);
+        raw_tag_filters = NULL;
     } else {
         memcpy(&tests, &baro__c.tests, sizeof(baro__c.tests));
     }
