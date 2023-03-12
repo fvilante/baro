@@ -19,14 +19,6 @@ endif()
 add_test(self_tests baro_test)
 
 macro(AddExampleTest test)
-    # Parse optional arguments
-    set (extra_args ${ARGN})
-    list(LENGTH extra_args extra_count)
-    if (${extra_count} GREATER 0)
-        # Command line arguments
-        list(GET extra_args 0 flags)
-    endif()
-
     add_executable(
         "example_${test}"
         "examples/${test}.c" baro.c)
@@ -44,19 +36,18 @@ macro(AddExampleTest test)
     add_custom_command(
         TARGET "example_${test}"
         POST_BUILD
-        COMMAND "example_${test}" "${flags}" > "${test}.txt" 2>&1 || (exit 0))
+        COMMAND "example_${test}" ${ARGN} > "${test}.txt" 2>&1 || (exit 0))
 
-        find_program(DIFF diff)
-        if(DIFF)
-            add_test(
-                    NAME "check_example_${test}"
-                    COMMAND diff -c --strip-trailing-cr "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
-        else()
-            add_test(
-                    NAME "check_example_${test}"
-                    COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
-        endif()
-
+    find_program(DIFF diff)
+    if(DIFF)
+        add_test(
+                NAME "check_example_${test}"
+                COMMAND diff -c --strip-trailing-cr "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+    else()
+        add_test(
+                NAME "check_example_${test}"
+                COMMAND ${CMAKE_COMMAND} -E compare_files --ignore-eol "${test}.txt" "${CMAKE_CURRENT_SOURCE_DIR}/examples/${test}.txt")
+    endif()
 endmacro()
 
 AddExampleTest(basic -a)
@@ -64,5 +55,6 @@ AddExampleTest(subtests -ao)
 AddExampleTest(unicode_encoding -a)
 # Excluded from the suite because it's so expensive
 #AddExampleTest(stress_tests)
-AddExampleTest(empty "")
-AddExampleTest(tag_filtering "-t foo,bar")
+AddExampleTest(empty)
+AddExampleTest(tag_filtering -t foo,bar)
+AddExampleTest(partitioning -n 2 -p 5)

@@ -268,11 +268,11 @@ execution by creating multiple processes with the partitioning arguments:
 
 For example, if we have 100 tests and want to partition across five processes:
 ```bash
-./tests -n 1 -p 5 # runs tests 0-19 (inclusive)
-./tests -n 2 -p 5 # "          20-39
-./tests -n 3 -p 5 # "          40-59
-./tests -n 4 -p 5 # "          60-79
-./tests -n 5 -p 5 # "          80-99
+./tests -n 1 -p 5 # runs tests  1-20 (inclusive)
+./tests -n 2 -p 5 #     "      21-40
+./tests -n 3 -p 5 #     "      41-60
+./tests -n 4 -p 5 #     "      61-80
+./tests -n 5 -p 5 #     "      81-100
 ```
 
 Or, with GNU Parallel:

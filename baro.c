@@ -222,7 +222,7 @@ int main(
     printf("Running %zu out of %zu test%s (of %zu total)\n", num_tests_to_run, num_tests,
            num_tests > 1 ? "s" : "", total_num_tests);
     if (num_partitions > 1) {
-        printf("(Partition %zu: tests %zu to %zu)\n", cur_partition, first_test, last_test - 1);
+        printf("(Partition %zu: tests %zu through %zu)\n", cur_partition, first_test + 1, last_test);
     }
 
     printf(BARO__SEPARATOR);

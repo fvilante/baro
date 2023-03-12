@@ -1,0 +1,17 @@
+Running 2 out of 10 tests (of 10 total)
+(Partition 2: tests 3 through 4)
+============================================================
+Require failed:
+    0 != 0
+==> 0 != 0
+At partitioning.c:14
+  In: 3 (partitioning.c:14)
+============================================================
+Require failed:
+    0 != 0
+==> 0 != 0
+At partitioning.c:15
+  In: 4 (partitioning.c:15)
+============================================================
+tests:       2 total |     0 passed |     2 failed
+asserts:     2 total |     0 passed |     2 failed
