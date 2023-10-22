@@ -1,3 +1,4 @@
+#include <signal.h>
 #include "baro.h"
 
 struct baro__context baro__c = {0};
@@ -59,6 +60,20 @@ int getopt(
     }
 
     return opt;
+}
+
+static void handle_signal(int signum) {
+    if (signum == SIGABRT) {
+        // Remove the signal handler
+        struct sigaction action;
+        memset(&action, 0, sizeof(struct sigaction));
+        action.sa_handler = NULL;
+        sigaction(SIGABRT, &action, NULL);
+
+        // Return to the main loop because we can't do anything useful while
+        // still in the signal handler
+        longjmp(baro__c.env, BARO__JMP_SIGABRT);
+    }
 }
 
 int main(
@@ -238,9 +253,29 @@ int main(
 
         int run_test = 1;
 
-        // Recover from required assertion failures
-        if (setjmp(baro__c.env)) {
+        int const jmp_val = setjmp(baro__c.env);
+        // Recover from REQUIRE assertion failures
+        if (jmp_val == BARO__JMP_REQUIRE) {
             run_test = 0;
+        }
+        // Recover from SIGABRT failures
+        else if (jmp_val == BARO__JMP_SIGABRT) {
+            baro__c.current_test_failed = 1;
+            baro__c.num_asserts_failed++;
+
+            baro__redirect_output(&baro__c, 0);
+
+            printf(BARO__RED "Assertion failed! Caught SIGABRT\n" BARO__UNSET_COLOR);
+            baro__assert_failed(BARO__ASSERT_REQUIRE, 0);
+
+            run_test = 0;
+        }
+        // Otherwise, install a SIGABRT handler
+        else {
+            struct sigaction action;
+            memset(&action, 0, sizeof(struct sigaction));
+            action.sa_handler = handle_signal;
+            sigaction(SIGABRT, &action, NULL);
         }
 
         while (run_test) {

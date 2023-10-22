@@ -422,6 +422,11 @@ enum baro__expected_value {
     BARO__EXPECTING_TRUE,
 };
 
+enum baro__jmp_val {
+    BARO__JMP_REQUIRE = 1,
+    BARO__JMP_SIGABRT,
+};
+
 static char const *extract_file_name(
         char const *path) {
     char const *last = path;
@@ -434,7 +439,7 @@ static char const *extract_file_name(
 }
 
 static inline void baro__assert_failed(
-        enum baro__assert_type const type) {
+        enum baro__assert_type const type, int const jump) {
     struct baro__test const * const test = baro__c.current_test;
     printf("  In: %s (%s:%d)\n",
            test->tag->desc, extract_file_name(test->tag->file_path), test->tag->line_num);
@@ -455,8 +460,8 @@ static inline void baro__assert_failed(
 
     baro__redirect_output(&baro__c, 1);
 
-    if (type == BARO__ASSERT_REQUIRE) {
-        longjmp(baro__c.env, 1);
+    if (type == BARO__ASSERT_REQUIRE && jump) {
+        longjmp(baro__c.env, BARO__JMP_REQUIRE);
     }
 }
 
@@ -486,7 +491,7 @@ static inline void baro__assert1(
     printf("==> %zu%s\n", value, op);
     printf("At %s:%d\n", extract_file_name(file_path), line_num);
 
-    baro__assert_failed(type);
+    baro__assert_failed(type, 1);
 }
 
 static inline void baro__assert2(
@@ -529,7 +534,7 @@ static inline void baro__assert2(
     printf("==> %zu %s %zu\n", lhs, op, rhs);
     printf("At %s:%d\n", extract_file_name(file_path), line_num);
 
-    baro__assert_failed(type);
+    baro__assert_failed(type, 1);
 }
 
 static inline void baro__assert_str(
@@ -584,8 +589,13 @@ static inline void baro__assert_str(
     printf("==> %s%s%s %*s%s %s%s%s\n", lhs_wrap, lhs, lhs_wrap, (int)expanded_padding, "", op, rhs_wrap, rhs, rhs_wrap);
     printf("At %s:%d\n", extract_file_name(file_path), line_num);
 
-    baro__assert_failed(type);
+    baro__assert_failed(type, 1);
 }
+
+// Turn the regular assert.h assert() into a baro assertion. This is a
+// best-effort mechanism that only works in files that include <baro.h> after
+// including <assert.h>.
+#define assert(e) BARO_REQUIRE(e, "Assertion failed (" #e ")")
 
 #else
 #define baro__assert1(...)
