@@ -62,13 +62,20 @@ int getopt(
     return opt;
 }
 
+static void set_sigabrt_handler(void (*handler)(int)) {
+#ifdef _WIN32
+    signal(SIGABRT, handler);
+#else
+    struct sigaction action;
+    memset(&action, 0, sizeof(struct sigaction));
+    action.sa_handler = handler;
+    sigaction(SIGABRT, &action, NULL);
+#endif
+}
+
 static void handle_signal(int signum) {
     if (signum == SIGABRT) {
-        // Remove the signal handler
-        struct sigaction action;
-        memset(&action, 0, sizeof(struct sigaction));
-        action.sa_handler = NULL;
-        sigaction(SIGABRT, &action, NULL);
+        set_sigabrt_handler(NULL);
 
         // Return to the main loop because we can't do anything useful while
         // still in the signal handler
@@ -281,10 +288,7 @@ int main(
         }
         // Otherwise, install a SIGABRT handler
         else {
-            struct sigaction action;
-            memset(&action, 0, sizeof(struct sigaction));
-            action.sa_handler = handle_signal;
-            sigaction(SIGABRT, &action, NULL);
+            set_sigabrt_handler(handle_signal);
         }
 
         while (run_test) {
