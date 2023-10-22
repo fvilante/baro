@@ -325,6 +325,21 @@ static inline void baro__context_create(
 #include <unistd.h>
 #endif
 
+static inline void baro__disable_output(
+        struct baro__context * const context,
+        FILE *file) {
+#ifdef _WIN32
+    FILE *dummy;
+        if (freopen_s(&dummy, "NUL", "a", file) != 0) {
+#else
+    if (freopen("NUL", "a", file) == NULL) {
+#endif
+        fprintf(stderr, "Failed to disable output to fileno %d\n", fileno(file));
+        exit(1);
+    }
+    setvbuf(stdout, NULL, _IONBF, 0);
+}
+
 static inline void baro__redirect_output(
         struct baro__context * const context,
         int const enable) {
@@ -342,17 +357,9 @@ static inline void baro__redirect_output(
         }
         setvbuf(stdout, baro__c.stdout_buffer, _IOFBF, BARO__STDOUT_BUF_SIZE);
     } else if (context->real_stdout != -1) {
-#ifdef _WIN32
-        FILE *dummy;
-        if (freopen_s(&dummy, "NUL", "a", stdout) != 0) {
-#else
-        if (freopen("NUL", "a", stdout) == NULL) {
-#endif
-            fprintf(stderr, "Failed to redirect stdout\n");
-            exit(1);
-        }
+        baro__disable_output(context, stdout);
+
         dup2(context->real_stdout, fileno(stdout));
-        setvbuf(stdout, NULL, _IONBF, 0);
     }
 }
 

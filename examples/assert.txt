@@ -6,7 +6,6 @@ Require failed: Assertion failed (1 == 2)
 At assert.c:7
   In: overridden assert (assert.c:5)
 ============================================================
-Assertion failed: (1 == 2), function BARO_TEST_1, file assert.c, line 15.
 Assertion failed! Caught SIGABRT
   In: libc assert (assert.c:13)
 ============================================================

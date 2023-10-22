@@ -80,7 +80,8 @@ int main(
         int argc,
         char *argv[]) {
     int show_passed_tests = 0;
-    int suppress_output = 1;
+    int suppress_stdout = 1;
+    int suppress_stderr = 0;
     int stop_after_failure = 0;
     size_t num_partitions = 1;
     size_t cur_partition = 1;
@@ -90,7 +91,7 @@ int main(
 
     // Parse command line options
     int c;
-    while ((c = getopt(argc, argv, "haosp:n:t:")) != -1) {
+    while ((c = getopt(argc, argv, "haoesp:n:t:")) != -1) {
         switch (c) {
         case 'p':
             num_partitions = strtol(optarg, NULL, 10);
@@ -105,7 +106,11 @@ int main(
             break;
 
         case 'o':
-            suppress_output = 0;
+            suppress_stdout = 0;
+            break;
+            
+        case 'e':
+            suppress_stderr = 1;
             break;
 
         case 's':
@@ -121,7 +126,8 @@ int main(
                    "Usage: %s [options]\n"
                    "Options:\n"
                    "  -a                   Show all tests, even passing ones\n"
-                   "  -o                   Show all standard output, including passed tests\n"
+                   "  -o                   Show all standard output (stdout), including passed tests\n"
+                   "  -e                   Hide standard error (stderr) output\n"
                    "  -s                   Stop running after the first failure\n"
                    "  -t <tag1,tag2,...>   Only run tests with one of these [tags]\n"
                    "  -p <num_partitions>  Total number of partitions, 1-based\n"
@@ -242,7 +248,10 @@ int main(
 
     printf(BARO__SEPARATOR);
 
-    baro__redirect_output(&baro__c, suppress_output);
+    baro__redirect_output(&baro__c, suppress_stdout);
+    if (suppress_stderr) {
+        baro__disable_output(&baro__c, stderr);
+    }
 
     // Begin running tests serially
     for (size_t i = first_test; i < last_test; i++) {
@@ -303,7 +312,7 @@ int main(
 
             printf(BARO__GREEN "Passed: %s (%s:%d)\n" BARO__UNSET_COLOR BARO__SEPARATOR,
                    test->tag->desc, extract_file_name(test->tag->file_path), test->tag->line_num);
-            baro__redirect_output(&baro__c, suppress_output);
+            baro__redirect_output(&baro__c, suppress_stdout);
         }
 
         // Wipe the saved output between tests
