@@ -117,6 +117,9 @@ A C99 unit testing framework that is:
     asserts:    18 total |    17 passed |     1 failed
     ```
 
+  - The tests can also be executed through CMake's CTest by running `ctest`
+    after building with `cmake`
+
 ### Macros
 
 `baro` is a small set of macros. By default, both a long (`BARO_`-prefixed) and
@@ -167,6 +170,10 @@ REQUIRE(file_exists("foo.txt"), "need test data file");
 CHECK_STR_EQ(get_name(), "testuser", "name should be populated");
 ```
 
+Note that an `assert(x)` macro is also provided. It is functionally equivalent
+to `BARO_REQUIRE(x)`. Assertions in libraries and other files without the
+`baro.h` header will still be detected as test failures via a `SIGABRT` handler.
+
 #### Subtests
 
 Subtests allow for test cases to be arranged in a tree: the outermost `TEST`
@@ -213,6 +220,7 @@ multiple subtests will be executed once for every leaf node, meaning that
     printf("\n");
 }</pre></td>
 <td><pre>
+
 begin
 1
 1.1
@@ -250,10 +258,12 @@ test case.
 
 The test runner accepts a few arguments:
 
-- `-a` shows **a**ll tests, even passing ones
-- `-o` shows all standard **o**utput, even for passing tests
+- `-a` shows **a**ll test results, even passing ones
+- `-o` shows all standard **o**utput (`stdout`), even for passing tests
   - By default, only the last 4096 characters of standard output will be
     shown only for failing tests
+- `-e` suppresses all standard **e**rror (`stderr`) output
+  - `stderr` output will not be shown, even for failing tests, in this case
 - `-s` will cause the test suite to **s**top after the first failure
 - `-t tag1,tag2` will only execute tests with descriptions containing either
   `[tag1]` or `[tag2]`
