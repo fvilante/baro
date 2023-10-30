@@ -635,10 +635,14 @@ static inline void baro__assert_arr(
 #define assert(e) BARO_REQUIRE(e, "Assertion failed (" #e ")")
 
 #else
-#define baro__assert1(...)
-#define baro__assert2(...)
-#define baro__assert_str(...) ;
-#define baro__assert_arr(...) ;
+#define baro__assert1(value, value_str, expected_value, type, desc, file_path, line_num) \
+do { (void)(value); (void)(desc); } while(0)
+#define baro__assert2(cond, lhs, lhs_str, rhs, rhs_str, type, desc, file_path, line_num) \
+do { (void)(lhs); (void)(rhs); (void)(desc); } while(0)
+#define baro__assert_str(lhs, lhs_str, rhs, rhs_str, expected_value, case_sensitivity, type, desc, file_path, line_num) \
+do { (void)(lhs); (void)(rhs); (void)(desc); } while(0)
+#define baro__assert_arr(lhs, lhs_str, rhs, rhs_str, size, expected_value, type, desc, file_path, line_num) \
+do { (void)(lhs); (void)(rhs); (void)(size); (void)(desc); } while(0)
 #endif//BARO_ENABLE
 
 #define BARO__CONCAT(a, b) BARO__CONCAT_INTERNAL(a, b)
