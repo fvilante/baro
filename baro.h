@@ -638,6 +638,7 @@ static inline void baro__assert_arr(
 #define baro__assert1(...)
 #define baro__assert2(...)
 #define baro__assert_str(...) ;
+#define baro__assert_arr(...) ;
 #endif//BARO_ENABLE
 
 #define BARO__CONCAT(a, b) BARO__CONCAT_INTERNAL(a, b)
@@ -849,6 +850,14 @@ BARO__X((__VA_ARGS__))
 #define BARO_CHECK_STR_ICASE_NE(...) BARO__X(BARO__GET3(__VA_ARGS__, BARO__CHECK_STR_ICASE_NE3, BARO__CHECK_STR_ICASE_NE2, )) \
 BARO__X((__VA_ARGS__))
 #define BARO_REQUIRE_STR_ICASE_NE(...) BARO__X(BARO__GET3(__VA_ARGS__, BARO__REQUIRE_STR_ICASE_NE3, BARO__REQUIRE_STR_ICASE_NE2, )) \
+BARO__X((__VA_ARGS__))
+#define BARO_CHECK_ARR_EQ(...) BARO__X(BARO__GET4(__VA_ARGS__, BARO__CHECK_ARR_EQ4, BARO__CHECK_ARR_EQ3, , )) \
+BARO__X((__VA_ARGS__))
+#define BARO_REQUIRE_ARR_EQ(...) BARO__X(BARO__GET4(__VA_ARGS__, BARO__REQUIRE_ARR_EQ4, BARO__REQUIRE_ARR_EQ3, , )) \
+BARO__X((__VA_ARGS__))
+#define BARO_CHECK_ARR_NE(...) BARO__X(BARO__GET4(__VA_ARGS__, BARO__CHECK_ARR_NE4, BARO__CHECK_ARR_NE3, , )) \
+BARO__X((__VA_ARGS__))
+#define BARO_REQUIRE_ARR_NE(...) BARO__X(BARO__GET4(__VA_ARGS__, BARO__REQUIRE_ARR_NE4, BARO__REQUIRE_ARR_NE3, , )) \
 BARO__X((__VA_ARGS__))
 #else
 #define BARO_CHECK(...) BARO__GET2(__VA_ARGS__, BARO__CHECK2, BARO__CHECK1) \
