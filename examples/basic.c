@@ -76,3 +76,45 @@ TEST("string comparisons with messages") {
     CHECK_STR_ICASE_EQ("foo", "bar", "message");
     CHECK_STR_ICASE_NE("foo", "foo", "message");
 }
+
+TEST("array comparisons") {
+    uint8_t a[] = { 1, 2, 0, 4 };
+    uint8_t b[] = { 1, 2, 3, 4 };
+
+    CHECK_ARR_NE(a, b, 4);
+    CHECK_ARR_EQ(a, b, 4); // should fail
+    CHECK_ARR_NE(b, a, 4);
+
+    CHECK_ARR_NE(a, b, 3);
+    CHECK_ARR_EQ(a, b, 3); // should fail
+    CHECK_ARR_NE(b, a, 3);
+
+    CHECK_ARR_EQ(a, b, 2);
+    CHECK_ARR_NE(a, b, 2); // should fail
+
+    CHECK_ARR_EQ(a, b, 1);
+
+    CHECK_ARR_EQ(a, b, 0);
+
+    a[2] = 3;
+    CHECK_ARR_EQ(a, b, 4);
+    CHECK_ARR_NE(a, b, 4); // should fail
+
+    uint32_t c[] = {0x1234, 0x5678};
+    uint32_t d[] = {0x1234, 0x8765};
+
+    CHECK_ARR_NE(c, d, 2);
+    CHECK_ARR_EQ(d, c, 1);
+
+    *(((uint8_t *)c) + 1) = 0x35;
+    CHECK_ARR_NE(c, d, 1);
+    CHECK_ARR_EQ((uint8_t *) c, (uint8_t *) d, 1);
+}
+
+TEST("array comparisons with messages") {
+    uint64_t a[] = {1, 2, 3};
+    uint64_t b[] = {1, 2, 4};
+
+    CHECK_ARR_NE(a, b, 2, "eq");
+    CHECK_ARR_EQ(a, b, 3, "not eq");
+}

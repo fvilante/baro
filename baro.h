@@ -20,8 +20,8 @@
 //#endif//_WIN32
 
 struct baro__tag {
-    const char *desc;
-    const char *file_path;
+    char const *desc;
+    char const *file_path;
     int line_num;
 };
 
@@ -504,12 +504,12 @@ static inline void baro__assert1(
 static inline void baro__assert2(
         enum baro__assert_cond cond,
         size_t lhs,
-        const char *lhs_str,
+        char const *lhs_str,
         size_t rhs,
-        const char *rhs_str,
+        char const *rhs_str,
         enum baro__assert_type type,
-        const char *desc,
-        const char *file_path,
+        char const *desc,
+        char const *file_path,
         int line_num) {
     baro__c.num_asserts++;
 
@@ -545,8 +545,8 @@ static inline void baro__assert2(
 }
 
 static inline void baro__assert_str(
-        const char *lhs,
-        const char *lhs_str,
+        char const *lhs,
+        char const *lhs_str,
         char const *rhs,
         char const *rhs_str,
         enum baro__expected_value expected_value,
@@ -599,9 +599,39 @@ static inline void baro__assert_str(
     baro__assert_failed(type, 1);
 }
 
+static inline void baro__assert_arr(
+        uint8_t const *lhs,
+        char const *lhs_str,
+        uint8_t const *rhs,
+        char const *rhs_str,
+        size_t const size,
+        enum baro__expected_value expected_value,
+        enum baro__assert_type type,
+        char const *desc,
+        char const *file_path,
+        int line_num) {
+    baro__c.num_asserts++;
+
+    if ((memcmp(lhs, rhs, size) == 0) == (expected_value == BARO__EXPECTING_TRUE)) {
+        return;
+    }
+
+    baro__c.current_test_failed = 1;
+    baro__c.num_asserts_failed++;
+
+    baro__redirect_output(&baro__c, 0);
+
+    char const * const assert_type = (type == BARO__ASSERT_REQUIRE ? "Require" : "Check");
+
+    printf(BARO__RED "%s array failed:%s\n" BARO__UNSET_COLOR, assert_type, desc);
+    printf("At %s:%d\n", extract_file_name(file_path), line_num);
+
+    baro__assert_failed(type, 1);
+}
+
 // Turn the regular assert.h assert() into a baro assertion. This is a
-// best-effort mechanism that only works in files that include <baro.h> after
-// including <assert.h>.
+// best-effort mechanism that only works in files that include <baro.h> (after
+// including <assert.h>).
 #define assert(e) BARO_REQUIRE(e, "Assertion failed (" #e ")")
 
 #else
@@ -746,8 +776,29 @@ static inline void baro__assert_str(
 #define BARO__REQUIRE_STR_ICASE_NE2(lhs, rhs) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
 #define BARO__REQUIRE_STR_ICASE_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, " " desc, __FILE__, __LINE__)
 
+#define BARO__CHECK_ARR_EQ3(lhs, rhs, size) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, "", __FILE__, __LINE__)
+#define BARO__CHECK_ARR_EQ4(lhs, rhs, size, desc) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, " " desc, __FILE__, __LINE__)
+
+#define BARO__REQUIRE_ARR_EQ3(lhs, rhs, size) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
+#define BARO__REQUIRE_ARR_EQ4(lhs, rhs, size, desc) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, " " desc, __FILE__, __LINE__)
+
+#define BARO__CHECK_ARR_NE3(lhs, rhs, size) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_FALSE, BARO__ASSERT_CHECK, "", __FILE__, __LINE__)
+#define BARO__CHECK_ARR_NE4(lhs, rhs, size, desc) _Static_assert(sizeof(lhs[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_FALSE, BARO__ASSERT_CHECK, " " desc, __FILE__, __LINE__)
+
+#define BARO__REQUIRE_ARR_NE3(lhs, rhs, size) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
+#define BARO__REQUIRE_ARR_NE4(lhs, rhs, size, desc) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, " " desc, __FILE__, __LINE__)
+
 #define BARO__GET2(_1, _2, NAME, ...) NAME
 #define BARO__GET3(_1, _2, _3, NAME, ...) NAME
+#define BARO__GET4(_1, _2, _3, _4, NAME, ...) NAME
 
 #ifdef _MSC_VER
 #define BARO__X(x) x
@@ -848,6 +899,14 @@ BARO__X((__VA_ARGS__))
 (__VA_ARGS__)
 #define BARO_REQUIRE_STR_ICASE_NE(...) BARO__GET3(__VA_ARGS__, BARO__REQUIRE_STR_ICASE_NE3, BARO__REQUIRE_STR_ICASE_NE2, ) \
 (__VA_ARGS__)
+#define BARO_CHECK_ARR_EQ(...) BARO__GET4(__VA_ARGS__, BARO__CHECK_ARR_EQ4, BARO__CHECK_ARR_EQ3, , ) \
+(__VA_ARGS__)
+#define BARO_REQUIRE_ARR_EQ(...) BARO__GET4(__VA_ARGS__, BARO__REQUIRE_ARR_EQ4, BARO__REQUIRE_ARR_EQ3, , ) \
+(__VA_ARGS__)
+#define BARO_CHECK_ARR_NE(...) BARO__GET4(__VA_ARGS__, BARO__CHECK_ARR_NE4, BARO__CHECK_ARR_NE3, , ) \
+(__VA_ARGS__)
+#define BARO_REQUIRE_ARR_NE(...) BARO__GET4(__VA_ARGS__, BARO__REQUIRE_ARR_NE4, BARO__REQUIRE_ARR_NE3, , ) \
+(__VA_ARGS__)
 #endif//_MSC_VER
 
 #ifndef BARO_NO_SHORT
@@ -877,5 +936,9 @@ BARO__X((__VA_ARGS__))
 #define REQUIRE_STR_ICASE_EQ BARO_REQUIRE_STR_ICASE_EQ
 #define CHECK_STR_ICASE_NE BARO_CHECK_STR_ICASE_NE
 #define REQUIRE_STR_ICASE_NE BARO_REQUIRE_STR_ICASE_NE
+#define CHECK_ARR_EQ BARO_CHECK_ARR_EQ
+#define REQUIRE_ARR_EQ BARO_REQUIRE_ARR_EQ
+#define CHECK_ARR_NE BARO_CHECK_ARR_NE
+#define REQUIRE_ARR_NE BARO_REQUIRE_ARR_NE
 #endif//BARO_NO_SHORT
 #endif//BARO_3FDC036FA2C64C72A0DB6BA1033C678B

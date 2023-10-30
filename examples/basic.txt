@@ -1,4 +1,4 @@
-Running 5 out of 5 tests (of 5 total)
+Running 7 out of 7 tests (of 7 total)
 ============================================================
 Check failed:
     0 != 0
@@ -138,5 +138,29 @@ Check (case insensitive) failed: message
 At basic.c:77
   In: string comparisons with messages (basic.c:73)
 ============================================================
-tests:       5 total |     0 passed |     5 failed
-asserts:    45 total |    22 passed |    23 failed
+Check array failed:
+At basic.c:85
+  In: array comparisons (basic.c:80)
+============================================================
+Check array failed:
+At basic.c:89
+  In: array comparisons (basic.c:80)
+============================================================
+Check array failed:
+At basic.c:93
+  In: array comparisons (basic.c:80)
+============================================================
+Check array failed:
+At basic.c:101
+  In: array comparisons (basic.c:80)
+============================================================
+Check array failed: eq
+At basic.c:118
+  In: array comparisons with messages (basic.c:114)
+============================================================
+Check array failed: not eq
+At basic.c:119
+  In: array comparisons with messages (basic.c:114)
+============================================================
+tests:       7 total |     0 passed |     7 failed
+asserts:    63 total |    34 passed |    29 failed
