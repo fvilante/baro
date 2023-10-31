@@ -638,8 +638,8 @@ static inline void baro__assert_arr(
 
     // Build a hex literal of the array element
     size_t const val_str_size = element_size * 2 + element_size / 2 + 1;
-    char lhs_val_str[val_str_size];
-    char rhs_val_str[val_str_size];
+    char *lhs_val_str = malloc(val_str_size);
+    char *rhs_val_str = malloc(val_str_size);
     char *p = lhs_val_str;
     char *q = rhs_val_str;
     uint8_t const *r = &lhs[(element_index + 1) * element_size - 1];
@@ -647,10 +647,8 @@ static inline void baro__assert_arr(
     for (int i = 0; i < element_size; i++) {
         size_t const remaining = val_str_size - (p - lhs_val_str);
 
-        p += snprintf(p, remaining, "%02x", *r);
-        q += snprintf(q, remaining, "%02x", *s);
-        r--;
-        s--;
+        p += snprintf(p, remaining, "%02x", *r--);
+        q += snprintf(q, remaining, "%02x", *s--);
 
         // Add delimiters
         if (i % 2 == 1 && i + 1 < element_size) {
@@ -665,6 +663,9 @@ static inline void baro__assert_arr(
     printf("    %s[%zu] %s %s[%zu]\n", lhs_str, element_index, op, rhs_str, element_index);
     printf("==> 0x%s %s 0x%s\n", lhs_val_str, op, rhs_val_str);
     printf("At %s:%d\n", extract_file_name(file_path), line_num);
+
+    free(lhs_val_str);
+    free(rhs_val_str);
 
     baro__assert_failed(type, 1);
 }
