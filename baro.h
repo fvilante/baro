@@ -604,7 +604,8 @@ static inline void baro__assert_arr(
         char const *lhs_str,
         uint8_t const *rhs,
         char const *rhs_str,
-        size_t const size,
+        size_t const element_size,
+        size_t const element_count,
         enum baro__expected_value expected_value,
         enum baro__assert_type type,
         char const *desc,
@@ -612,18 +613,57 @@ static inline void baro__assert_arr(
         int line_num) {
     baro__c.num_asserts++;
 
+    size_t const size = element_size * element_count;
+
     if ((memcmp(lhs, rhs, size) == 0) == (expected_value == BARO__EXPECTING_TRUE)) {
         return;
     }
+
+    size_t index = 0;
+    for (; index < size; index++) {
+        if ((lhs[index] == rhs[index] && expected_value == BARO__EXPECTING_FALSE) ||
+                (lhs[index] != rhs[index] && expected_value == BARO__EXPECTING_TRUE)) {
+            break;
+        }
+    }
+    size_t const element_index = index / element_size;
 
     baro__c.current_test_failed = 1;
     baro__c.num_asserts_failed++;
 
     baro__redirect_output(&baro__c, 0);
 
+    char const * const op = (expected_value == BARO__EXPECTING_TRUE ? "==" : "!=");
     char const * const assert_type = (type == BARO__ASSERT_REQUIRE ? "Require" : "Check");
 
+    // Build a hex literal of the array element
+    size_t const val_str_size = element_size * 2 + element_size / 2 + 1;
+    char lhs_val_str[val_str_size];
+    char rhs_val_str[val_str_size];
+    char *p = lhs_val_str;
+    char *q = rhs_val_str;
+    uint8_t const *r = &lhs[(element_index + 1) * element_size - 1];
+    uint8_t const *s = &rhs[(element_index + 1) * element_size - 1];
+    for (int i = 0; i < element_size; i++) {
+        size_t const remaining = val_str_size - (p - lhs_val_str);
+
+        p += snprintf(p, remaining, "%02x", *r);
+        q += snprintf(q, remaining, "%02x", *s);
+        r--;
+        s--;
+
+        // Add delimiters
+        if (i % 2 == 1 && i + 1 < element_size) {
+            *p++ = '_';
+            *q++ = '_';
+        }
+    }
+    *p = '\0';
+    *q = '\0';
+
     printf(BARO__RED "%s array failed:%s\n" BARO__UNSET_COLOR, assert_type, desc);
+    printf("    %s[%zu] %s %s[%zu]\n", lhs_str, element_index, op, rhs_str, element_index);
+    printf("==> 0x%s %s 0x%s\n", lhs_val_str, op, rhs_val_str);
     printf("At %s:%d\n", extract_file_name(file_path), line_num);
 
     baro__assert_failed(type, 1);
@@ -641,8 +681,8 @@ do { (void)(value); (void)(desc); } while(0)
 do { (void)(lhs); (void)(rhs); (void)(desc); } while(0)
 #define baro__assert_str(lhs, lhs_str, rhs, rhs_str, expected_value, case_sensitivity, type, desc, file_path, line_num) \
 do { (void)(lhs); (void)(rhs); (void)(desc); } while(0)
-#define baro__assert_arr(lhs, lhs_str, rhs, rhs_str, size, expected_value, type, desc, file_path, line_num) \
-do { (void)(lhs); (void)(rhs); (void)(size); (void)(desc); } while(0)
+#define baro__assert_arr(lhs, lhs_str, rhs, rhs_str, element_size, element_count, expected_value, type, desc, file_path, line_num) \
+do { (void)(lhs); (void)(rhs); (void)(element_size); (void)(element_count); (void)(desc); } while(0)
 #endif//BARO_ENABLE
 
 #define BARO__CONCAT(a, b) BARO__CONCAT_INTERNAL(a, b)
@@ -782,24 +822,24 @@ do { (void)(lhs); (void)(rhs); (void)(size); (void)(desc); } while(0)
 #define BARO__REQUIRE_STR_ICASE_NE3(lhs, rhs, desc) baro__assert_str(lhs, #lhs, rhs, #rhs, BARO__EXPECTING_FALSE, BARO__CASE_INSENSITIVE, BARO__ASSERT_REQUIRE, " " desc, __FILE__, __LINE__)
 
 #define BARO__CHECK_ARR_EQ3(lhs, rhs, size) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
-baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, "", __FILE__, __LINE__)
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, sizeof((lhs)[0]), size, BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, "", __FILE__, __LINE__)
 #define BARO__CHECK_ARR_EQ4(lhs, rhs, size, desc) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
-baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, " " desc, __FILE__, __LINE__)
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, sizeof((lhs)[0]), size, BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, " " desc, __FILE__, __LINE__)
 
 #define BARO__REQUIRE_ARR_EQ3(lhs, rhs, size) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
-baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, sizeof((lhs)[0]), size, BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
 #define BARO__REQUIRE_ARR_EQ4(lhs, rhs, size, desc) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
-baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, " " desc, __FILE__, __LINE__)
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, sizeof((lhs)[0]), size, BARO__EXPECTING_TRUE, BARO__ASSERT_REQUIRE, " " desc, __FILE__, __LINE__)
 
 #define BARO__CHECK_ARR_NE3(lhs, rhs, size) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
-baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_FALSE, BARO__ASSERT_CHECK, "", __FILE__, __LINE__)
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, sizeof((lhs)[0]), size, BARO__EXPECTING_FALSE, BARO__ASSERT_CHECK, "", __FILE__, __LINE__)
 #define BARO__CHECK_ARR_NE4(lhs, rhs, size, desc) _Static_assert(sizeof(lhs[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
-baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_FALSE, BARO__ASSERT_CHECK, " " desc, __FILE__, __LINE__)
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, sizeof((lhs)[0]), size, BARO__EXPECTING_FALSE, BARO__ASSERT_CHECK, " " desc, __FILE__, __LINE__)
 
 #define BARO__REQUIRE_ARR_NE3(lhs, rhs, size) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
-baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, sizeof((lhs)[0]), size, BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, "", __FILE__, __LINE__)
 #define BARO__REQUIRE_ARR_NE4(lhs, rhs, size, desc) _Static_assert(sizeof((lhs)[0]) == sizeof((rhs)[0]), "Mismatched array types"); \
-baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, size * sizeof((lhs)[0]), BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, " " desc, __FILE__, __LINE__)
+baro__assert_arr((uint8_t const *) (lhs), #lhs, (uint8_t const *) (rhs), #rhs, sizeof((lhs)[0]), size, BARO__EXPECTING_FALSE, BARO__ASSERT_REQUIRE, " " desc, __FILE__, __LINE__)
 
 #define BARO__GET2(_1, _2, NAME, ...) NAME
 #define BARO__GET3(_1, _2, _3, NAME, ...) NAME

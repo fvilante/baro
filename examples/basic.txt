@@ -139,26 +139,38 @@ At basic.c:77
   In: string comparisons with messages (basic.c:73)
 ============================================================
 Check array failed:
+    a[2] == b[2]
+==> 0x00 == 0x03
 At basic.c:85
   In: array comparisons (basic.c:80)
 ============================================================
 Check array failed:
+    a[2] == b[2]
+==> 0x00 == 0x03
 At basic.c:89
   In: array comparisons (basic.c:80)
 ============================================================
 Check array failed:
+    a[0] != b[0]
+==> 0x01 != 0x01
 At basic.c:93
   In: array comparisons (basic.c:80)
 ============================================================
 Check array failed:
+    a[0] != b[0]
+==> 0x01 != 0x01
 At basic.c:101
   In: array comparisons (basic.c:80)
 ============================================================
 Check array failed: eq
+    a[0] != b[0]
+==> 0x0000_0000_0000_0001 != 0x0000_0000_0000_0001
 At basic.c:118
   In: array comparisons with messages (basic.c:114)
 ============================================================
 Check array failed: not eq
+    a[2] == b[2]
+==> 0x0000_0000_0000_0003 == 0x0000_0000_0000_0004
 At basic.c:119
   In: array comparisons with messages (basic.c:114)
 ============================================================
