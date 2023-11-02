@@ -1,2 +1,5 @@
-.idea/
-cmake-*/
+**/cmake-*/
+**/out/
+
+**/.idea/
+**/.vs/
