@@ -1,16 +1,20 @@
 #include <baro.h>
 
-#ifdef _MSC_VER
-#include <immintrin.h>
-#define CLZ(x) ((int)_lzcnt_u32(x))
-#else
-#define CLZ(x) __builtin_clz(x)
-#endif
-
 // Write your methods like usual:
 
 unsigned long utf8_decode(char **s) {
-    int k = **s ? CLZ(~((uint32_t)**(unsigned char **)s << 24u)) : 0;
+    uint32_t const f = ~((uint32_t)**(unsigned char**)s << 24u);
+#ifdef _WIN32
+    int k = 0;
+    if (_BitScanReverse(&k, f)) {
+        k = 31 - k;
+    }
+    else {
+        k = 32;
+    }
+#else
+    int k = **s ? __builtin_clz(f) : 0;
+#endif
     unsigned long mask = (unsigned) (1u << (8u - k)) - 1;
     unsigned long value = **(unsigned char **)s & mask;
     for (++(*s), --k; k > 0 && **s; --k, ++(*s)) {

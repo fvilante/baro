@@ -51,7 +51,11 @@ TEST("string comparisons") {
     CHECK_STR_EQ("foo", foo);
     CHECK_STR_NE("foo", foo); // should fail
 
+#ifdef _WIN32
+    char *foo_dup = _strdup(foo);
+#else
     char *foo_dup = strdup(foo);
+#endif
     CHECK_STR_EQ(foo, foo_dup);
     CHECK_STR_EQ("foo", foo_dup);
 

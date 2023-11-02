@@ -1,3 +1,6 @@
+// Keep assert around, even in release builds, for the sake of tests
+#undef NDEBUG
+
 #include <baro.h>
 
 // Try using the assert macro provided by baro.h, which turns into a regular

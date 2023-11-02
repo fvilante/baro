@@ -125,7 +125,11 @@ int main(
             break;
 
         case 't':
+#ifdef _WIN32
+            raw_tag_filters = _strdup(optarg);
+#else
             raw_tag_filters = strdup(optarg);
+#endif
             break;
 
         case 'h':
@@ -170,7 +174,13 @@ int main(
         }
 
         char **filters = malloc(num_filters * sizeof(char *));
-        p = strtok(raw_tag_filters, ",");
+
+        char* next_token = NULL;
+#ifdef _WIN32
+        p = strtok_s(raw_tag_filters, ",", &next_token);
+#else
+        p = strtok_r(raw_tag_filters, ",", &next_token);
+#endif
         for (size_t i = 0; i < num_filters; i++) {
             if (p == NULL) {
                 filters[i] = NULL;
@@ -191,7 +201,11 @@ int main(
             filters[i] = malloc(filter_len + 2 + 1);
             snprintf(filters[i], filter_len + 2 + 1, "[%s]", p);
 
-            p = strtok(NULL, ",");
+#ifdef _WIN32
+            p = strtok_s(NULL, ",", &next_token);
+#else
+            p = strtok_r(NULL, ",", &next_token);
+#endif
         }
 
         // Copy over tests that match the filters

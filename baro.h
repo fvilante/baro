@@ -748,6 +748,10 @@ do { (void)(lhs); (void)(rhs); (void)(element_size); (void)(element_count); (voi
 #define BARO__SUBTEST_WRAPPER(...)
 #endif//BARO_ENABLE
 
+#if __STDC_VERSION__ < 201112L
+#define _Static_assert(X, Y) do { (void)(X); (void)(Y); } while(0)
+#endif
+
 #define BARO_SUBTEST(desc) BARO__SUBTEST_WRAPPER(desc, __COUNTER__)
 
 #define BARO__CHECK1(cond) baro__assert1((size_t)cond, #cond, BARO__EXPECTING_TRUE, BARO__ASSERT_CHECK, "", __FILE__, __LINE__)

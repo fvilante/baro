@@ -3,17 +3,17 @@ Running 3 out of 3 tests (of 3 total)
 Require failed: Assertion failed (1 == 2)
     1 == 2 != 0
 ==> 0 != 0
-At assert.c:7
-  In: overridden assert (assert.c:5)
+At assert.c:10
+  In: overridden assert (assert.c:8)
 ============================================================
 Assertion failed! Caught SIGABRT
-  In: libc assert (assert.c:13)
+  In: libc assert (assert.c:16)
 ============================================================
 Require failed:
     1 == 2 != 0
 ==> 0 != 0
-At assert.c:20
-  In: some other test (assert.c:19)
+At assert.c:23
+  In: some other test (assert.c:22)
 ============================================================
 tests:       3 total |     0 passed |     3 failed
 asserts:     3 total |     0 passed |     3 failed

@@ -99,80 +99,80 @@ At basic.c:52
 Check (case insensitive) failed:
     "BAR" == foo_dup
 ==> "BAR" == "foo"
-At basic.c:60
+At basic.c:64
   In: string comparisons (basic.c:49)
 ============================================================
 Check failed: displays message on check failure
     0 != 0
 ==> 0 != 0
-At basic.c:66
-  In: fail with message (basic.c:65)
+At basic.c:70
+  In: fail with message (basic.c:69)
 ============================================================
 Require failed: displays message on require failure
     0 != 0
 ==> 0 != 0
-At basic.c:70
-  In: fail with message (basic.c:65)
-============================================================
-Check failed: message
-    "foo" == "bar"
-==> "foo" == "bar"
 At basic.c:74
-  In: string comparisons with messages (basic.c:73)
+  In: fail with message (basic.c:69)
+============================================================
+Check failed: message
+    "foo" == "bar"
+==> "foo" == "bar"
+At basic.c:78
+  In: string comparisons with messages (basic.c:77)
 ============================================================
 Check failed: message
     "foo" != "foo"
 ==> "foo" != "foo"
-At basic.c:75
-  In: string comparisons with messages (basic.c:73)
+At basic.c:79
+  In: string comparisons with messages (basic.c:77)
 ============================================================
 Check (case insensitive) failed: message
     "foo" == "bar"
 ==> "foo" == "bar"
-At basic.c:76
-  In: string comparisons with messages (basic.c:73)
+At basic.c:80
+  In: string comparisons with messages (basic.c:77)
 ============================================================
 Check (case insensitive) failed: message
     "foo" != "foo"
 ==> "foo" != "foo"
-At basic.c:77
-  In: string comparisons with messages (basic.c:73)
-============================================================
-Check array failed:
-    a[2] == b[2]
-==> 0x00 == 0x03
-At basic.c:85
-  In: array comparisons (basic.c:80)
+At basic.c:81
+  In: string comparisons with messages (basic.c:77)
 ============================================================
 Check array failed:
     a[2] == b[2]
 ==> 0x00 == 0x03
 At basic.c:89
-  In: array comparisons (basic.c:80)
+  In: array comparisons (basic.c:84)
 ============================================================
 Check array failed:
-    a[0] != b[0]
-==> 0x01 != 0x01
+    a[2] == b[2]
+==> 0x00 == 0x03
 At basic.c:93
-  In: array comparisons (basic.c:80)
+  In: array comparisons (basic.c:84)
 ============================================================
 Check array failed:
     a[0] != b[0]
 ==> 0x01 != 0x01
-At basic.c:101
-  In: array comparisons (basic.c:80)
+At basic.c:97
+  In: array comparisons (basic.c:84)
+============================================================
+Check array failed:
+    a[0] != b[0]
+==> 0x01 != 0x01
+At basic.c:105
+  In: array comparisons (basic.c:84)
 ============================================================
 Check array failed: eq
     a[0] != b[0]
 ==> 0x0000_0000_0000_0001 != 0x0000_0000_0000_0001
-At basic.c:118
-  In: array comparisons with messages (basic.c:114)
+At basic.c:122
+  In: array comparisons with messages (basic.c:118)
 ============================================================
 Check array failed: not eq
     a[2] == b[2]
 ==> 0x0000_0000_0000_0003 == 0x0000_0000_0000_0004
-At basic.c:119
-  In: array comparisons with messages (basic.c:114)
+At basic.c:123
+  In: array comparisons with messages (basic.c:118)
 ============================================================
 tests:       7 total |     0 passed |     7 failed
 asserts:    63 total |    34 passed |    29 failed

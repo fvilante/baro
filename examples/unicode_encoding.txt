@@ -1,6 +1,6 @@
 Running 1 out of 1 test (of 1 total)
 ============================================================
-Passed: [encoding] UTF-8 <-> UTF-32 (unicode_encoding.c:44)
+Passed: [encoding] UTF-8 <-> UTF-32 (unicode_encoding.c:48)
 ============================================================
 tests:       1 total |     1 passed |     0 failed
 asserts:    23 total |    23 passed |     0 failed
