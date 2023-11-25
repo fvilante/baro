@@ -684,6 +684,13 @@ do { (void)(lhs); (void)(rhs); (void)(desc); } while(0)
 do { (void)(lhs); (void)(rhs); (void)(desc); } while(0)
 #define baro__assert_arr(lhs, lhs_str, rhs, rhs_str, element_size, element_count, expected_value, type, desc, file_path, line_num) \
 do { (void)(lhs); (void)(rhs); (void)(element_size); (void)(element_count); (void)(desc); } while(0)
+#ifndef assert
+#ifdef __cplusplus
+#include <cassert>
+#else
+#include <assert.h>
+#endif//defined(__cplusplus)
+#endif//!defined(assert)
 #endif//BARO_ENABLE
 
 #define BARO__CONCAT(a, b) BARO__CONCAT_INTERNAL(a, b)
