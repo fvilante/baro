@@ -330,7 +330,7 @@ static inline void baro__redirect_output(
         FILE *dummy;
         if (freopen_s(&dummy, "NUL", "a", stdout) != 0) {
 #else
-        if (freopen("NUL", "a", stdout) == NULL) {
+        if (freopen("/dev/null", "a", stdout) == NULL) {
 #endif
             fprintf(stderr, "Failed to redirect stdout\n");
             exit(1);
@@ -341,7 +341,7 @@ static inline void baro__redirect_output(
         FILE *dummy;
         if (freopen_s(&dummy, "NUL", "a", stdout) != 0) {
 #else
-        if (freopen("NUL", "a", stdout) == NULL) {
+        if (freopen("/dev/null", "a", stdout) == NULL) {
 #endif
             fprintf(stderr, "Failed to redirect stdout\n");
             exit(1);
